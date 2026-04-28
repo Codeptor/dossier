@@ -1,5 +1,6 @@
 ---
 import Barcode from "@/components/Barcode.astro";
+import PulsarPlaque from "@/components/PulsarPlaque.astro";
 import { assets, capabilities, history, profile } from "@/data/profile";
 
 interface Props {
@@ -17,9 +18,8 @@ const { state, route = "/" } = Astro.props;
       <h1>Operational<br />Manifest</h1>
       <p>Subject: {profile.name.toUpperCase()} // ID: {profile.id}</p>
     </div>
-    <div class="scan-panel" aria-hidden="true">
-      {Array.from({ length: 256 }).map((_, index) => <span style={`--d:${(index % 15) + 2}`}></span>)}
-    </div>
+    <PulsarPlaque />
+
   </section>
 
   <section class="status-grid">

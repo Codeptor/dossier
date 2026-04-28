@@ -44,8 +44,24 @@ const { state, route = "/artifacts" } = Astro.props;
   <footer class="archive-foot">
     <div>
       <span>Authorization</span>
-      <svg viewBox="0 0 260 80" aria-hidden="true">
-        <path d="M20 55 C75 25 103 39 154 12 C119 35 102 61 42 68 C75 72 122 58 220 22" />
+      <svg viewBox="0 0 260 80" aria-hidden="true" class="constellation">
+        <g class="constellation-lines">
+          <polyline points="22,58 56,42 92,52 128,28 162,40 198,22 232,32" />
+          <polyline points="56,42 78,68 128,28" />
+          <polyline points="162,40 184,62 232,32" />
+        </g>
+        <g class="constellation-stars">
+          <circle cx="22" cy="58" r="2.2" />
+          <circle cx="56" cy="42" r="3" />
+          <circle cx="78" cy="68" r="1.8" />
+          <circle cx="92" cy="52" r="1.6" />
+          <circle cx="128" cy="28" r="3.4" />
+          <circle cx="162" cy="40" r="2.6" />
+          <circle cx="184" cy="62" r="1.8" />
+          <circle cx="198" cy="22" r="2" />
+          <circle cx="232" cy="32" r="2.4" />
+        </g>
+        <text x="6" y="74" class="constellation-tag">RA 18h27m // DEC -04°37'</text>
       </svg>
     </div>
     <div>
