@@ -1,0 +1,58 @@
+---
+import Barcode from "@/components/Barcode.astro";
+import { profile, thoughts } from "@/data/profile";
+
+interface Props {
+  state: "active" | "left" | "right";
+  route?: string;
+}
+
+const { state, route = "/thoughts" } = Astro.props;
+---
+
+<article class:list={["sheet", "thoughts-sheet", state]} data-sheet="thoughts" data-route={route}>
+  <div class="paper-grain"></div>
+  <div class="red-rule"></div>
+  <header class="field-head">
+    <div>
+      <h1>Field Log</h1>
+      <p>Issue 01 // 2026</p>
+    </div>
+    <div>
+      <strong>Wed, Apr 29, 2026</strong>
+      <span>Available now</span>
+    </div>
+  </header>
+
+  <p class="field-intro">
+    Notes from the workbench: systems, markets, terminals, interfaces, and small tools that earn their place.
+  </p>
+
+  <section class="entries">
+    <div class="entries-head">
+      <h2>Selected Entries</h2>
+      <span></span>
+    </div>
+    <div class="filters">
+      <span>Recent</span><i>/</i><span>Engineering</span><i>/</i><span>Systems</span>
+    </div>
+    <div class="entry-list">
+      {thoughts.map((entry) => (
+        <a href={entry.href}>
+          <div>
+            <strong>{entry.title}</strong>
+            <p>{entry.summary}</p>
+            <em>{entry.href}</em>
+          </div>
+          <time>{entry.date}</time>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <footer class="field-foot">
+    <div><span></span><em>Fin.</em><span></span></div>
+    <p>{profile.name.toUpperCase()} // {profile.year}</p>
+    <Barcode />
+  </footer>
+</article>

@@ -1,0 +1,58 @@
+---
+import Barcode from "@/components/Barcode.astro";
+import { artifacts, profile } from "@/data/profile";
+
+interface Props {
+  state: "active" | "left" | "right";
+  route?: string;
+}
+
+const { state, route = "/artifacts" } = Astro.props;
+---
+
+<article class:list={["sheet", "archive-sheet", state]} data-sheet="artifacts" data-route={route}>
+  <div class="paper-grain"></div>
+  <div class="blue-grid"></div>
+  <header class="archive-head">
+    <span>Spec_Archive</span>
+    <h1>System_Archive</h1>
+    <p>Registry_Index // Artifacts</p>
+    <small>Vol. 2026.01</small>
+    <div>
+      <label>Date<strong>Wed, Apr 29, 2026</strong></label>
+      <label>Log_Time<strong>05:12 AM</strong></label>
+      <label>Status<strong>Verified</strong></label>
+    </div>
+  </header>
+
+  <section class="registry">
+    <h2><i></i>Experimental_Registry</h2>
+    <div class="artifact-list">
+      {artifacts.map((artifact) => (
+        <a href={artifact.href}>
+          <div>
+            <strong>{artifact.name}</strong>
+            <p>{artifact.description}</p>
+            <em>{artifact.href}</em>
+          </div>
+          <span>{artifact.year}</span>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <footer class="archive-foot">
+    <div>
+      <span>Authorization</span>
+      <svg viewBox="0 0 260 80" aria-hidden="true">
+        <path d="M20 55 C75 25 103 39 154 12 C119 35 102 61 42 68 C75 72 122 58 220 22" />
+      </svg>
+    </div>
+    <div>
+      <span>Checksum</span>
+      <strong>{profile.checksum}</strong>
+      <Barcode />
+    </div>
+    <p>*** No_Further_Data ***</p>
+  </footer>
+</article>

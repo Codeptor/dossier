@@ -1,0 +1,25 @@
+---
+import DossierStack from "@/components/DossierStack.astro";
+import { artifacts, assets } from "@/data/profile";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+export function getStaticPaths() {
+  const allArtifacts = [...artifacts, ...assets.map((asset) => ({
+    name: asset.name,
+    year: "2026",
+    description: asset.description,
+    href: asset.href,
+  }))];
+
+  return allArtifacts.map((artifact) => ({
+    params: { slug: artifact.href.split("/").pop() },
+    props: { artifact },
+  }));
+}
+
+const { artifact } = Astro.props;
+---
+
+<BaseLayout title={`${artifact.name} // codeptor`}>
+  <DossierStack active="artifacts" />
+</BaseLayout>

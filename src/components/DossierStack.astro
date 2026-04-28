@@ -1,0 +1,128 @@
+---
+import ArchiveSheet from "@/components/ArchiveSheet.astro";
+import ManifestSheet from "@/components/ManifestSheet.astro";
+import Nav from "@/components/Nav.astro";
+import ThoughtsSheet from "@/components/ThoughtsSheet.astro";
+import { profile } from "@/data/profile";
+
+interface Props {
+  active: "home" | "thoughts" | "artifacts";
+}
+
+const { active } = Astro.props;
+
+type Sheet = "home" | "thoughts" | "artifacts";
+type SheetState = "active" | "left" | "right";
+
+const stateFor = (sheet: Sheet): SheetState => {
+  if (sheet === active) return "active";
+  const positions: Record<Sheet, Record<Exclude<Sheet, typeof active>, SheetState>> = {
+    home: { thoughts: "right", artifacts: "left" },
+    thoughts: { home: "left", artifacts: "right" },
+    artifacts: { thoughts: "left", home: "right" },
+  };
+  return positions[active][sheet as Exclude<Sheet, typeof active>];
+};
+---
+
+<Nav active={active} />
+<main id="content" class="site-shell" tabindex="-1">
+  <div class="stack-wrap" data-active={active}>
+    <ManifestSheet state={stateFor("home")} route="/" />
+    <ThoughtsSheet state={stateFor("thoughts")} route="/thoughts" />
+    <ArchiveSheet state={stateFor("artifacts")} route="/artifacts" />
+  </div>
+</main>
+
+<footer class="site-foot">
+  <span>© {profile.year}</span>
+  <nav aria-label="Social links">
+    {profile.socials.map((item) => <a href={item.href}>{item.label}</a>)}
+  </nav>
+</footer>
+
+<script>
+  const routes = ["/", "/thoughts", "/artifacts"];
+
+  const currentRoute = () => {
+  const path = window.location.pathname.replace(/\/$/, "") || "/";
+    if (path.startsWith("/thoughts")) return "/thoughts";
+    if (path.startsWith("/artifacts")) return "/artifacts";
+    return routes.includes(path) ? path : "/";
+  };
+
+  const go = (route: string) => {
+    if (route === currentRoute()) return;
+    const link = document.querySelector<HTMLAnchorElement>(`a[href="${route}"]`);
+    if (link) {
+      link.click();
+      return;
+    }
+    window.location.href = route;
+  };
+
+  const attachSheetControls = () => {
+    const sheets = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet][data-route]"));
+    const active = document.querySelector<HTMLElement>(".sheet.active");
+    const activeRoute = currentRoute();
+
+    sheets.forEach((sheet) => {
+      sheet.addEventListener("click", (event) => {
+        if (sheet.classList.contains("active")) return;
+        const target = event.target as HTMLElement;
+        if (target.closest("a")) return;
+        go(sheet.dataset.route || "/");
+      });
+    });
+
+    if (!active) return;
+
+    let startX = 0;
+    let startY = 0;
+    let dragging = false;
+    let pointerId = 0;
+
+    active.addEventListener("pointerdown", (event) => {
+      const target = event.target as HTMLElement;
+      if (target.closest("a, button")) return;
+      pointerId = event.pointerId;
+      startX = event.clientX;
+      startY = event.clientY;
+      dragging = true;
+      active.classList.add("dragging");
+      active.setPointerCapture(pointerId);
+    });
+
+    active.addEventListener("pointermove", (event) => {
+      if (!dragging || event.pointerId !== pointerId) return;
+      const dx = event.clientX - startX;
+      const dy = event.clientY - startY;
+      if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+      active.style.setProperty("--drag-x", `${dx}px`);
+      active.style.setProperty("--drag-y", `${dy}px`);
+      active.style.setProperty("--drag-rot", `${dx * 0.025}deg`);
+    });
+
+    const release = (event: PointerEvent) => {
+      if (!dragging || event.pointerId !== pointerId) return;
+      const dx = event.clientX - startX;
+      dragging = false;
+      active.classList.remove("dragging");
+      active.style.removeProperty("--drag-x");
+      active.style.removeProperty("--drag-y");
+      active.style.removeProperty("--drag-rot");
+
+      const index = routes.indexOf(activeRoute);
+      if (Math.abs(dx) > 120) {
+        const nextIndex = dx < 0 ? Math.min(index + 1, routes.length - 1) : Math.max(index - 1, 0);
+        go(routes[nextIndex]);
+      }
+    };
+
+    active.addEventListener("pointerup", release);
+    active.addEventListener("pointercancel", release);
+  };
+
+  attachSheetControls();
+  document.addEventListener("astro:page-load", attachSheetControls);
+</script>

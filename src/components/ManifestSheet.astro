@@ -1,0 +1,114 @@
+---
+import Barcode from "@/components/Barcode.astro";
+import { assets, capabilities, history, profile } from "@/data/profile";
+
+interface Props {
+  state: "active" | "left" | "right";
+  route?: string;
+}
+
+const { state, route = "/" } = Astro.props;
+---
+
+<article class:list={["sheet", "manifest-sheet", state]} data-sheet="manifest" data-route={route}>
+  <div class="paper-grain"></div>
+  <section class="manifest-head">
+    <div>
+      <h1>Operational<br />Manifest</h1>
+      <p>Subject: {profile.name.toUpperCase()} // ID: {profile.id}</p>
+    </div>
+    <div class="scan-panel" aria-hidden="true">
+      {Array.from({ length: 256 }).map((_, index) => <span style={`--d:${(index % 15) + 2}`}></span>)}
+    </div>
+  </section>
+
+  <section class="status-grid">
+    <div>
+      <span>Status</span>
+      <strong>{profile.status}</strong>
+    </div>
+    <div>
+      <span>Location</span>
+      <strong>{profile.location}</strong>
+    </div>
+  </section>
+
+  <div class="time-row">
+    <span>Date: Wed, Apr 29, 2026</span>
+    <span>Time: <time id="clock">--:--:--</time></span>
+  </div>
+
+  <section class="section-block">
+    <h2>01 // Profile_Summary</h2>
+    <p class="quote">"{profile.summary}"</p>
+  </section>
+
+  <section class="section-block">
+    <h2>02 // Operational_History</h2>
+    <div class="timeline">
+      {history.map((item) => (
+        <div>
+          <strong>{item.role}</strong>
+          <span>{item.year}</span>
+          <em>{item.org}</em>
+        </div>
+      ))}
+    </div>
+    <a class="dossier-link" href={profile.dossierHref}>Download_Full_Dossier.pdf <span>-></span></a>
+  </section>
+
+  <section class="section-block">
+    <h2>03 // Deployed_Assets</h2>
+    <div class="asset-list">
+      {assets.map((asset) => (
+        <a href={asset.href}>
+          <strong>{asset.name}</strong>
+          <span>{asset.description}</span>
+          <em>{asset.href}</em>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="section-block">
+    <h2>04 // Capability_Matrix</h2>
+    <div class="capability-grid">
+      {capabilities.map(([name, level]) => (
+        <div>
+          <span>{name}</span>
+          <b>{level}</b>
+        </div>
+      ))}
+    </div>
+  </section>
+
+  <footer class="manifest-foot">
+    <div>
+      <span>XP_TOTAL</span>
+      <strong>TEN_PLUS_YEARS</strong>
+    </div>
+    <div>
+      <span>{profile.revision}</span>
+      <strong>[ OK ]</strong>
+    </div>
+    <hr />
+    <p>Manifest_End</p>
+    <Barcode />
+    <small>Stay_Curious</small>
+  </footer>
+</article>
+
+<script>
+  const clock = document.getElementById("clock");
+  const updateClock = () => {
+    if (!clock) return;
+    clock.textContent = new Intl.DateTimeFormat("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    }).format(new Date());
+  };
+  updateClock();
+  setInterval(updateClock, 1000);
+</script>

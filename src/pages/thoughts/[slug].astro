@@ -1,0 +1,18 @@
+---
+import DossierStack from "@/components/DossierStack.astro";
+import { thoughts } from "@/data/profile";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+export function getStaticPaths() {
+  return thoughts.map((entry) => ({
+    params: { slug: entry.href.split("/").pop() },
+    props: { entry },
+  }));
+}
+
+const { entry } = Astro.props;
+---
+
+<BaseLayout title={`${entry.title} // codeptor`}>
+  <DossierStack active="thoughts" />
+</BaseLayout>

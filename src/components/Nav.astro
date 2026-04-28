@@ -1,0 +1,47 @@
+---
+import { profile } from "@/data/profile";
+
+interface Props {
+  active: "home" | "thoughts" | "artifacts";
+}
+
+const { active } = Astro.props;
+const nav = [
+  { label: "home", href: "/" },
+  { label: "thoughts", href: "/thoughts" },
+  { label: "artifacts", href: "/artifacts" },
+];
+---
+
+<aside class="top-nav">
+  <nav aria-label="Primary">
+    <a class="brand" href="/" aria-label={`${profile.handle} home`}>
+      <span class="brand-mark" aria-hidden="true"></span>
+      <strong>{profile.handle}</strong>
+    </a>
+    <div class="nav-links">
+      {nav.map((item) => (
+        <a class:list={{ selected: active === item.label }} href={item.href}>{item.label}</a>
+      ))}
+    </div>
+    <button class="sound" type="button" aria-label="Toggle sound">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M11 5 7 9H3v6h4l4 4V5Z"></path>
+        <path d="M16 9a5 5 0 0 1 0 6"></path>
+        <path d="M19 6a9 9 0 0 1 0 12"></path>
+      </svg>
+    </button>
+  </nav>
+</aside>
+
+<nav class="mobile-nav" aria-label="Mobile">
+  <div class="screen">
+    <span>Current View</span>
+    <strong>{active}</strong>
+  </div>
+  <div class="mobile-actions">
+    {nav.map((item) => (
+      <a class:list={{ selected: active === item.label }} href={item.href}>{item.label.slice(0, 1)}</a>
+    ))}
+  </div>
+</nav>
