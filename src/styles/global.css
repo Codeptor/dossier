@@ -2666,12 +2666,6 @@ a {
     display: none;
   }
 
-  /* Center the DitherPanel inside its (now single-column) manifest-head cell.
-     Also keep the original (non-inverted) colors on mobile. */
-  .dither-panel {
-    justify-self: center;
-  }
-
   .manifest-sheet,
   .thoughts-sheet,
   .archive-sheet {
@@ -2679,7 +2673,10 @@ a {
   }
 
   .manifest-head {
-    grid-template-columns: 1fr;
+    /* Keep the desktop side-by-side layout — title left, dither panel right.
+       Just tighten the gap and let the panel shrink to fit. */
+    grid-template-columns: 1fr 110px;
+    gap: 14px;
     min-height: auto;
   }
 
@@ -2779,13 +2776,13 @@ a {
     background: #e8e4d7;
   }
 
-  /* DitherPanel — fluid up to its native 260px max so it doesn't overflow */
+  /* DitherPanel — pinned to the right column of manifest-head, smaller on mobile. */
   .dither-panel {
     width: 100%;
-    max-width: 260px;
+    max-width: 110px;
     height: auto;
     aspect-ratio: 260 / 246;
-    margin: 0 auto;
+    margin: 0;
   }
 
   /* Reading view — drop the desktop 64px gutter for narrow viewports */
