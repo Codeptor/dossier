@@ -3,12 +3,7 @@ title: "Splitting Audio Off Tokio in a Rust Music Player"
 date: 2026-03-04
 summary: "Async LibraryManager handles I/O; a dedicated mpsc thread handles playback so Tokio's scheduler jitter never reaches the audio pipeline."
 tag: Systems
-artifact: entropy
 ---
-
-import Artifact from "@/components/artifacts/Artifact.astro";
-
-<Artifact slug="entropy" />
 
 Entropy is a native music player I'm building in Rust on Slint. Tokio for everything async (library scans, metadata fetches, artwork caching, search), but the moment audio buffers get involved, Tokio is the wrong tool.
 

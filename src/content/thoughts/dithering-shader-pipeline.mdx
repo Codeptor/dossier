@@ -1,8 +1,8 @@
 ---
-title: "Fourteen Dithering Modes in One WebGL2 Pipeline"
+title: "An Agent Skill That Emits ASCII Shaders as Inlined TSX"
 date: 2026-03-20
-summary: "Floyd-Steinberg, Atkinson, Bayer, blue noise — plus ASCII, Braille, halftone renderers, all running real-time."
-tag: Graphics
+summary: "ascii-shader-tsx is markdown reference docs, not a library. The agent reads, emits one inlined .tsx file. Distribution unit shifts from npm to instruction set."
+tag: Tools
 artifact: dithered
 ---
 
@@ -10,24 +10,36 @@ import Artifact from "@/components/artifacts/Artifact.astro";
 
 <Artifact slug="dithered" />
 
-Dithered started as a single Floyd-Steinberg pass on a `<canvas>` and grew into a creative studio with fourteen dithering algorithms, nine art-style renderers, and eight post-FX effects, all running real-time at 60fps on uploaded images, 30s 1080p video, or a webcam feed.
+`ascii-shader-tsx` solves the same problem as a UI component package, but the unit of distribution is the agent's reference docs — not a versioned npm artifact.
 
-The architecture rule that kept it sane: the engine is a pure-logic module with zero React dependencies.
+Conventional path: publish `@bhanueso/ascii-shader-fx`, lock to a React major, ship semver bumps, deal with transitive deps.
+
+Skill path: ship a markdown reference library (`SKILL.md` + 9 chapter files under `references/`). When you ask for "matrix rain with CRT scanlines", the agent reads `SKILL.md`'s decision tree, loads the matching chapters (`generative.md` + `effects.md`), and emits a single `.tsx` file with the engine code inlined. Zero deps beyond React.
+
+The layout:
 
 ```
-apps/web/engine/
-├── color/      # sRGB linearization, BT.709 luminance, OKLAB
-├── dithering/  # 14 algorithms
-├── art-styles/ # ASCII, Halftone, Braille, DotCross, Line, …
-├── postfx/     # CRT, Bloom, Chromatic Aberration, Vignette, Glitch
-├── renderer/   # WebGL2 pipeline, font atlas, adaptive quality
-└── source/     # Image, video, webcam
+SKILL.md                  # orchestrator, decision tree, component contract
+references/
+├── architecture.md       # canvas hook, ResizeObserver, prefers-reduced-motion
+├── rendering.md          # BT.709 luminance, sRGB LUT, 8 color modes
+├── dithering.md          # 8 algorithms (Floyd-Steinberg, Atkinson, …)
+├── styles.md             # 9 art-style renderers (halftone, braille, particles)
+├── generative.md         # simplex noise, fBm, matrix rain, plasma
+├── effects.md            # CRT, glitch, bloom, chromatic aberration
+├── charsets.md           # 30+ palettes (runes, katakana, math, box-drawing)
+├── composition.md        # blend modes, mouse-attract, feedback buffer
+└── image-source.md       # image / video / webcam pipeline
 ```
 
-Two splits matter. **Dithering happens in linear color space**, not sRGB. If you don't linearize before quantizing, error diffusion smears toward gamma's mid-tones and the result looks dirty. BT.709 luminance for the threshold check, OKLAB for palette quantization in the duotone modes.
+Three things this gets you that a package can't:
 
-**Art styles are renderers, not filters**. Floyd-Steinberg outputs a quantized bitmap. ASCII, Braille, halftone — those *render* that bitmap into characters or shapes. Treating them as separate stages means I can stack: blue-noise dither → braille render → CRT post-FX, and the chain composes. Eight post-FX effects (CRT barrel + phosphor mask + scanlines, bloom, chromatic aberration, vignette, film grain, glitch, scanlines, interlace) become a chained shader pipeline at the end.
+**One file in your repo.** No `node_modules` touched. The component is fully readable, fully editable. To swap Floyd-Steinberg for Atkinson, you say so and the agent rewrites that block.
 
-Char rendering uses a font atlas baked once at app start — variable charsets (Standard, Blocks, Braille, Katakana, Rune, Greek, math symbols, box drawing — 40+) all sample from the same texture.
+**Version is your conversation.** Updating means regenerating with newer agent context. No semver, no migration guide, no deprecated APIs.
 
-Export pipeline catches the same render path: PNG, JPEG, MP4/WebM at 20Mbps with resolution-scaled bitrate, client-side GIF, and a self-contained Vanilla JS or React TSX component that includes the engine code. The standalone background package (`@workspace/ascii-bg`) is the engine + a thin wrapper, zero shadcn/Tailwind deps so it drops into any React app.
+**Agent-agnostic.** Same markdown works in Claude Code, Cursor, Windsurf, Cline, Gemini CLI — anything that reads files. The "import path" is "load the skill, then ask".
+
+The decision tree in `SKILL.md` is the load-bearing part. Without it, the agent reads everything and the context bloats. With it, *"webcam-to-braille with Floyd-Steinberg dithering"* loads `image-source.md + dithering.md + styles.md` only — three files, ~40KB of context, instead of all nine.
+
+The companion skill (`ascii-dither-shader`, the bigger reference for the engine itself) covers the math; this one covers shipping. Both are MIT, both work on any agent that can read a directory.
