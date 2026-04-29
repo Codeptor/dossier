@@ -159,31 +159,78 @@ const stats = [
 </article>
 
 <script>
-  const clock = document.getElementById("clock");
-  const updateClock = () => {
+  // Per-load setup: each astro:page-load brings the manifest back into the DOM
+  // (or arrives fresh on first paint). Bind the clock once per arrival, clear
+  // on swap so the prior interval doesn't pile up across navigations.
+  let clockTimer: number | undefined;
+
+  const startClock = () => {
+    const clock = document.getElementById("clock");
     if (!clock) return;
-    clock.textContent = new Intl.DateTimeFormat("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: true,
-    }).format(new Date());
+    const tick = () => {
+      clock.textContent = new Intl.DateTimeFormat("en-IN", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }).format(new Date());
+    };
+    tick();
+    if (clockTimer !== undefined) window.clearInterval(clockTimer);
+    clockTimer = window.setInterval(tick, 1000);
   };
-  updateClock();
-  setInterval(updateClock, 1000);
+
+  const stopClock = () => {
+    if (clockTimer !== undefined) {
+      window.clearInterval(clockTimer);
+      clockTimer = undefined;
+    }
+  };
+
+  // Location: visitor IP doesn't change mid-session — cache the resolved label
+  // in sessionStorage so re-visits to the manifest don't re-hit the edge.
+  const LOCATION_CACHE_KEY = "codeptor-visitor-location";
+
+  const writeLocation = (label: string) => {
+    document.querySelectorAll<HTMLElement>("[data-location]").forEach((el) => {
+      el.textContent = label.toUpperCase();
+    });
+  };
 
   const setVisitorLocation = async () => {
-    const slot = document.querySelector<HTMLElement>("[data-location]");
-    if (!slot) return;
+    let cached: string | null = null;
+    try {
+      cached = sessionStorage.getItem(LOCATION_CACHE_KEY);
+    } catch {
+      /* sessionStorage unavailable — proceed without cache */
+    }
+    if (cached) {
+      writeLocation(cached);
+      return;
+    }
     try {
       const res = await fetch("/api/location.json");
       if (!res.ok) return;
       const data = await res.json();
-      if (data?.label) slot.textContent = String(data.label).toUpperCase();
+      if (data?.label) {
+        const label = String(data.label);
+        writeLocation(label);
+        try {
+          sessionStorage.setItem(LOCATION_CACHE_KEY, label);
+        } catch {
+          /* ignore */
+        }
+      }
     } catch {
       /* fall back to the static value already in the DOM */
     }
   };
+
+  startClock();
   setVisitorLocation();
-  document.addEventListener("astro:page-load", setVisitorLocation);
+  document.addEventListener("astro:page-load", () => {
+    startClock();
+    setVisitorLocation();
+  });
+  document.addEventListener("astro:before-swap", stopClock);
 </script>
