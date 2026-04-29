@@ -8,6 +8,9 @@ const GIT_SHA = (typeof __GIT_SHA__ !== "undefined" ? __GIT_SHA__ : "DEV") as st
 export const profile = {
   handle: "bhanueso",
   name: "Bhanu",
+  // Short role descriptor used in <title> tags — keeps tab/search results
+  // informative beyond just the name.
+  tagline: "Creative Frontend Engineer",
   id: ESOTERIC_MORSE,
   // Static fallback — replaced at runtime by the visitor's IP-geolocated city
   // via /api/location.json (Vercel edge headers).
