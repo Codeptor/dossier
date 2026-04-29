@@ -48,7 +48,7 @@ const states = [
   </div>
 </div>
 
-<script define:vars={{ STATES: states }}>
+<script is:inline define:vars={{ STATES: states }}>
   const init = () => {
     const card = document.querySelector("[data-w-card]");
     if (!card || card.dataset.bound) return;
