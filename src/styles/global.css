@@ -1213,11 +1213,17 @@ a {
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
 }
 
-/* Keep prose at a comfortable reading measure while letting code use the
-   full content width for long lines. */
+/* Body text spans the full sheet width and is justified for the
+   typeset-document feel. Code blocks have their own overflow handling so
+   they ignore this rule naturally. */
 .reading-body > p,
 .reading-body > ul,
-.reading-body > ol,
+.reading-body > ol {
+  text-align: justify;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+
 .reading-summary {
   max-width: 64ch;
 }
