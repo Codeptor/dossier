@@ -37,12 +37,44 @@ const stateFor = (sheet: Sheet): SheetState => {
 <footer class="site-foot">
   <span>© {profile.year}</span>
   <nav aria-label="Social links">
+    <a href="/rss.xml">rss feed</a>
     {profile.socials.map((item) => <a href={item.href}>{item.label}</a>)}
   </nav>
 </footer>
 
 <script>
   const routes = ["/", "/thoughts", "/artifacts"];
+  const sheetForRoute: Record<string, string> = {
+    "/": "manifest",
+    "/thoughts": "thoughts",
+    "/artifacts": "artifacts",
+  };
+  // Maps the data-sheet identifier to its view-transition-name.
+  const groupName: Record<string, string> = {
+    manifest: "sheet-manifest",
+    thoughts: "sheet-thoughts",
+    artifacts: "sheet-archive",
+  };
+
+  const STYLE_ID = "sheet-target-style";
+
+  // Browsers don't honour `html[attr] ::view-transition-group(name)` selectors
+  // — the attribute filter doesn't propagate to view-transition pseudo-elements.
+  // Inject a hard-coded rule via a managed <style> tag so the becoming-active
+  // sheet's group renders on top of the others during the morph.
+  const setTargetSheet = (sheetId: string | null) => {
+    let tag = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+    if (!tag) {
+      tag = document.createElement("style");
+      tag.id = STYLE_ID;
+      document.head.appendChild(tag);
+    }
+    if (!sheetId || !groupName[sheetId]) {
+      tag.textContent = "";
+      return;
+    }
+    tag.textContent = `::view-transition-group(${groupName[sheetId]}) { z-index: 100 !important; }`;
+  };
 
   const currentRoute = () => {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
@@ -53,6 +85,7 @@ const stateFor = (sheet: Sheet): SheetState => {
 
   const go = (route: string) => {
     if (route === currentRoute()) return;
+    setTargetSheet(sheetForRoute[route]);
     const link = document.querySelector<HTMLAnchorElement>(`a[href="${route}"]`);
     if (link) {
       link.click();
@@ -85,12 +118,15 @@ const stateFor = (sheet: Sheet): SheetState => {
     active.addEventListener("pointerdown", (event) => {
       const target = event.target as HTMLElement;
       if (target.closest("a, button")) return;
+      event.preventDefault();
       pointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
       dragging = true;
       active.classList.add("dragging");
-      active.setPointerCapture(pointerId);
+      try {
+        active.setPointerCapture(pointerId);
+      } catch (_) {}
     });
 
     active.addEventListener("pointermove", (event) => {
@@ -99,8 +135,6 @@ const stateFor = (sheet: Sheet): SheetState => {
       const dy = event.clientY - startY;
       if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
       active.style.setProperty("--drag-x", `${dx}px`);
-      active.style.setProperty("--drag-y", `${dy}px`);
-      active.style.setProperty("--drag-rot", `${dx * 0.025}deg`);
     });
 
     const release = (event: PointerEvent) => {
@@ -108,14 +142,22 @@ const stateFor = (sheet: Sheet): SheetState => {
       const dx = event.clientX - startX;
       dragging = false;
       active.classList.remove("dragging");
-      active.style.removeProperty("--drag-x");
-      active.style.removeProperty("--drag-y");
-      active.style.removeProperty("--drag-rot");
 
       const index = routes.indexOf(activeRoute);
-      if (Math.abs(dx) > 120) {
-        const nextIndex = dx < 0 ? Math.min(index + 1, routes.length - 1) : Math.max(index - 1, 0);
-        go(routes[nextIndex]);
+      const passed = Math.abs(dx) > 120;
+
+      if (passed) {
+        // dx > 0 (drag right) advances; dx < 0 (drag left) retreats.
+        // Routes cycle so the user never hits a dead boundary.
+        const direction = dx > 0 ? 1 : -1;
+        const nextIndex = (index + direction + routes.length) % routes.length;
+        const nextRoute = routes[nextIndex];
+        // keep --drag-x set so the view-transition captures the
+        // dragged-off transform as the FROM state
+        go(nextRoute);
+      } else {
+        // under threshold — CSS transition smoothly snaps back to 0
+        active.style.removeProperty("--drag-x");
       }
     };
 
@@ -124,5 +166,24 @@ const stateFor = (sheet: Sheet): SheetState => {
   };
 
   attachSheetControls();
+
+  // Astro replaces <head> during the DOM swap, which blows away our
+  // dynamic <style id="sheet-target-style"> tag. Re-inject it at swap
+  // boundaries pointing at the destination's active sheet so the
+  // view-transition animation keeps the right z-index override.
+  document.addEventListener("astro:before-swap", (event: any) => {
+    const newActive = event?.newDocument
+      ?.querySelector(".sheet.active")
+      ?.dataset?.sheet;
+    if (newActive) setTargetSheet(newActive);
+  });
+
+  document.addEventListener("astro:after-swap", () => {
+    const newActive = document
+      .querySelector<HTMLElement>(".sheet.active")
+      ?.dataset.sheet;
+    if (newActive) setTargetSheet(newActive);
+  });
+
   document.addEventListener("astro:page-load", attachSheetControls);
 </script>

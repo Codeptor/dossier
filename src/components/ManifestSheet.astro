@@ -1,7 +1,9 @@
 ---
+import { getCollection } from "astro:content";
 import Barcode from "@/components/Barcode.astro";
 import PulsarPlaque from "@/components/PulsarPlaque.astro";
-import { assets, capabilities, history, profile } from "@/data/profile";
+import Sparkline from "@/components/Sparkline.astro";
+import { activity, artifacts, assets, capabilities, history, profile } from "@/data/profile";
 
 interface Props {
   state: "active" | "left" | "right";
@@ -9,17 +11,29 @@ interface Props {
 }
 
 const { state, route = "/" } = Astro.props;
+const hasActivity = activity.some((v) => v > 0);
+const thoughtCount = (await getCollection("thoughts")).length;
+const stats = [
+  { label: "ARTIFACTS", value: String(artifacts.length).padStart(2, "0") },
+  { label: "THOUGHTS", value: String(thoughtCount).padStart(2, "0") },
+  { label: "STACK", value: String(capabilities.length).padStart(2, "0") },
+];
 ---
 
-<article class:list={["sheet", "manifest-sheet", state]} data-sheet="manifest" data-route={route}>
+<article
+  class:list={["sheet", "manifest-sheet", state]}
+  data-sheet="manifest"
+  data-route={route}
+  transition:name="sheet-manifest"
+>
   <div class="paper-grain"></div>
   <section class="manifest-head">
     <div>
       <h1>Operational<br />Manifest</h1>
       <p>Subject: {profile.name.toUpperCase()} // ID: {profile.id}</p>
+      <a class="manifest-now" href="/now">NOW_LOG →</a>
     </div>
     <PulsarPlaque />
-
   </section>
 
   <section class="status-grid">
@@ -29,7 +43,7 @@ const { state, route = "/" } = Astro.props;
     </div>
     <div>
       <span>Location</span>
-      <strong>{profile.location}</strong>
+      <strong data-location>{profile.location}</strong>
     </div>
   </section>
 
@@ -37,6 +51,28 @@ const { state, route = "/" } = Astro.props;
     <span>Date: Wed, Apr 29, 2026</span>
     <span>Time: <time id="clock">--:--:--</time></span>
   </div>
+
+  <section class="stat-row" aria-label="Dossier metrics">
+    {stats.map((stat) => (
+      <div class="stat-tile">
+        <span>{stat.label}</span>
+        <strong>{stat.value}</strong>
+      </div>
+    ))}
+  </section>
+
+  {hasActivity && (
+    <section class="section-block">
+      <h2>00 // Activity_Trace</h2>
+      <div class="activity-card">
+        <div class="activity-meta">
+          <span>OUTPUT_INDEX</span>
+          <em>last 12 mo</em>
+        </div>
+        <Sparkline data={activity} />
+      </div>
+    </section>
+  )}
 
   <section class="section-block">
     <h2>01 // Profile_Summary</h2>
@@ -82,10 +118,34 @@ const { state, route = "/" } = Astro.props;
     </div>
   </section>
 
+  <section class="section-block">
+    <h2>05 // Comm_Channels</h2>
+    <div class="comm-grid">
+      <a href={`mailto:${profile.email}`}>
+        <span>✉</span>
+        <strong>{profile.email}</strong>
+      </a>
+      {profile.socials.filter((s) => (s as any).primary).map((s) => (
+        <a href={s.href} target="_blank" rel="noreferrer noopener">
+          <span>↗</span>
+          <strong>{s.label}</strong>
+        </a>
+      ))}
+    </div>
+    <div class="comm-secondary">
+      <span>ELSEWHERE</span>
+      <div>
+        {profile.socials.filter((s) => !(s as any).primary).map((s) => (
+          <a href={s.href} target="_blank" rel="noreferrer noopener">{s.label}</a>
+        ))}
+      </div>
+    </div>
+  </section>
+
   <footer class="manifest-foot">
     <div>
       <span>XP_TOTAL</span>
-      <strong>TEN_PLUS_YEARS</strong>
+      <strong>FIVE_PLUS_YEARS</strong>
     </div>
     <div>
       <span>{profile.revision}</span>
@@ -111,4 +171,19 @@ const { state, route = "/" } = Astro.props;
   };
   updateClock();
   setInterval(updateClock, 1000);
+
+  const setVisitorLocation = async () => {
+    const slot = document.querySelector<HTMLElement>("[data-location]");
+    if (!slot) return;
+    try {
+      const res = await fetch("/api/location.json");
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data?.label) slot.textContent = String(data.label).toUpperCase();
+    } catch {
+      /* fall back to the static value already in the DOM */
+    }
+  };
+  setVisitorLocation();
+  document.addEventListener("astro:page-load", setVisitorLocation);
 </script>

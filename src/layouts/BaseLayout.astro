@@ -1,5 +1,6 @@
 ---
 import { ClientRouter } from "astro:transitions";
+import { profile } from "@/data/profile";
 import "../styles/global.css";
 
 interface Props {
@@ -8,9 +9,25 @@ interface Props {
 }
 
 const {
-  title = "Bhanu // codeptor",
-  description = "Personal dossier portfolio for Bhanu, codeptor.",
+  title = `${profile.name} // ${profile.handle}`,
+  description = profile.summary,
 } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? "https://bhanueso.dev").toString();
+const ogImage = new URL("/og.png", Astro.site ?? "https://bhanueso.dev").toString();
+
+const personLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: profile.name,
+  alternateName: profile.handle,
+  url: Astro.site?.toString() ?? "https://bhanueso.dev",
+  email: `mailto:${profile.email}`,
+  description: profile.summary,
+  jobTitle: "Creative Frontend Engineer",
+  image: ogImage,
+  sameAs: profile.socials.map((s) => s.href),
+};
 ---
 
 <!doctype html>
@@ -20,11 +37,82 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#080909" />
+    <meta name="author" content={profile.name} />
+    <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="alternate" type="application/rss+xml" title="Field Log" href="/rss.xml" />
+    <script is:inline>
+      // Apply the persisted theme synchronously before first paint, AND on
+      // every Astro view-transition swap (the ClientRouter merges html
+      // attributes from the new doc, which would otherwise wipe data-theme).
+      (function () {
+        var KEY = "codeptor-theme";
+        var THEMES = ["dark", "blueprint", "plaque", "light"];
+        function get() {
+          try {
+            var t = localStorage.getItem(KEY);
+            return t && THEMES.indexOf(t) !== -1 ? t : null;
+          } catch (_) {
+            return null;
+          }
+        }
+        function applyTo(root) {
+          var t = get();
+          if (t) root.dataset.theme = t;
+        }
+        applyTo(document.documentElement);
+        document.addEventListener("astro:before-swap", function (e) {
+          if (e && e.newDocument) applyTo(e.newDocument.documentElement);
+        });
+      })();
+    </script>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:site_name" content={profile.handle} />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <meta name="twitter:creator" content="@esotericfrr" />
+
+    <script type="application/ld+json" set:html={JSON.stringify(personLd)} />
+
     <title>{title}</title>
     <ClientRouter />
   </head>
   <body>
     <slot />
+    <script>
+      // Scale fixed-size iframe artifacts (1280x720 desktop renders) down to
+      // their container width via a ResizeObserver. Avoids the cqi/transform
+      // paint-timing race that left iframes unscaled until the user toggled zoom.
+      const apply = (el: HTMLElement) => {
+        const target = parseFloat(el.dataset.targetWidth || "1280");
+        const w = el.getBoundingClientRect().width;
+        if (w > 0 && target > 0) {
+          el.style.setProperty("--frame-scale", String(w / target));
+        }
+      };
+      const observed = new WeakSet<HTMLElement>();
+      const ro = new ResizeObserver((entries) => {
+        for (const e of entries) apply(e.target as HTMLElement);
+      });
+      const wire = () => {
+        document.querySelectorAll<HTMLElement>("[data-scaled-frame]").forEach((el) => {
+          if (!observed.has(el)) {
+            observed.add(el);
+            ro.observe(el);
+          }
+          apply(el);
+        });
+      };
+      wire();
+      document.addEventListener("astro:page-load", wire);
+    </script>
   </body>
 </html>

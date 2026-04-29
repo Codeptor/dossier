@@ -7,9 +7,9 @@ interface Props {
 
 const { active } = Astro.props;
 const nav = [
-  { label: "home", href: "/" },
-  { label: "thoughts", href: "/thoughts" },
-  { label: "artifacts", href: "/artifacts" },
+  { label: "home", href: "/", key: "1" },
+  { label: "thoughts", href: "/thoughts", key: "2" },
+  { label: "artifacts", href: "/artifacts", key: "3" },
 ];
 ---
 
@@ -29,15 +29,19 @@ const nav = [
     </a>
     <div class="nav-links">
       {nav.map((item) => (
-        <a class:list={{ selected: active === item.label }} href={item.href}>{item.label}</a>
+        <a
+          class:list={{ selected: active === item.label }}
+          href={item.href}
+          aria-keyshortcuts={item.key}
+          title={`Press ${item.key}`}
+        >
+          {item.label}
+          <kbd>{item.key}</kbd>
+        </a>
       ))}
     </div>
-    <button class="sound" type="button" aria-label="Toggle sound">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M11 5 7 9H3v6h4l4 4V5Z"></path>
-        <path d="M16 9a5 5 0 0 1 0 6"></path>
-        <path d="M19 6a9 9 0 0 1 0 12"></path>
-      </svg>
+    <button class="theme-toggle" type="button" aria-label="Cycle theme" data-theme-toggle>
+      <span class="theme-tag">[ <em data-theme-name>DARK</em> ]</span>
     </button>
   </nav>
 </aside>
@@ -53,3 +57,88 @@ const nav = [
     ))}
   </div>
 </nav>
+
+<script>
+  const THEMES = ["dark", "blueprint", "plaque", "light"] as const;
+  type Theme = (typeof THEMES)[number];
+  const KEY = "codeptor-theme";
+
+  const apply = (theme: Theme) => {
+    document.documentElement.dataset.theme = theme;
+    document.querySelectorAll<HTMLElement>("[data-theme-name]").forEach((el) => {
+      el.textContent = theme.toUpperCase();
+    });
+  };
+
+  const initial = ((): Theme => {
+    try {
+      const stored = localStorage.getItem(KEY);
+      if (stored && (THEMES as readonly string[]).includes(stored)) return stored as Theme;
+    } catch {}
+    return "dark";
+  })();
+  apply(initial);
+
+  const bind = () => {
+    document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]").forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const current = (document.documentElement.dataset.theme || "dark") as Theme;
+        const idx = THEMES.indexOf(current);
+        const next = THEMES[(idx + 1) % THEMES.length];
+        apply(next);
+        try {
+          localStorage.setItem(KEY, next);
+        } catch {}
+      });
+    });
+  };
+  bind();
+  document.addEventListener("astro:page-load", bind);
+
+  // Keyboard shortcuts: 1/2/3 → routes, h/t/a → routes, ←/→ → prev/next, t → cycle theme
+  const routeMap: Record<string, string> = {
+    "1": "/",
+    "h": "/",
+    "2": "/thoughts",
+    "3": "/artifacts",
+    "a": "/artifacts",
+  };
+  const routes = ["/", "/thoughts", "/artifacts"];
+  const currentRoute = (): string => {
+    const path = location.pathname.replace(/\/$/, "") || "/";
+    if (path.startsWith("/thoughts")) return "/thoughts";
+    if (path.startsWith("/artifacts")) return "/artifacts";
+    return routes.includes(path) ? path : "/";
+  };
+  const goTo = (route: string) => {
+    if (route === currentRoute()) return;
+    const link = document.querySelector<HTMLAnchorElement>(`a[href="${route}"]`);
+    if (link) link.click();
+    else location.href = route;
+  };
+  document.addEventListener("keydown", (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target as HTMLElement | null;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+    const k = event.key.toLowerCase();
+    if (k === "t") {
+      // Theme cycle on lowercase t
+      document.querySelector<HTMLButtonElement>("[data-theme-toggle]")?.click();
+      return;
+    }
+    if (routeMap[k]) {
+      event.preventDefault();
+      goTo(routeMap[k]);
+      return;
+    }
+    if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+      const dir = event.key === "ArrowRight" ? 1 : -1;
+      const idx = routes.indexOf(currentRoute());
+      const next = (idx + dir + routes.length) % routes.length;
+      event.preventDefault();
+      goTo(routes[next]);
+    }
+  });
+</script>

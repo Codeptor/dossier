@@ -1,6 +1,7 @@
 ---
+import { getCollection } from "astro:content";
 import Barcode from "@/components/Barcode.astro";
-import { profile, thoughts } from "@/data/profile";
+import { profile } from "@/data/profile";
 
 interface Props {
   state: "active" | "left" | "right";
@@ -8,9 +9,26 @@ interface Props {
 }
 
 const { state, route = "/thoughts" } = Astro.props;
+
+const entries = (await getCollection("thoughts")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+
+const tagCounts = entries.reduce<Record<string, number>>((acc, t) => {
+  acc[t.data.tag] = (acc[t.data.tag] ?? 0) + 1;
+  return acc;
+}, {});
+const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1]);
+const totalEntries = entries.length;
+const totalTags = Object.keys(tagCounts).length;
 ---
 
-<article class:list={["sheet", "thoughts-sheet", state]} data-sheet="thoughts" data-route={route}>
+<article
+  class:list={["sheet", "thoughts-sheet", state]}
+  data-sheet="thoughts"
+  data-route={route}
+  transition:name="sheet-thoughts"
+>
   <div class="paper-grain"></div>
   <div class="red-rule"></div>
   <header class="field-head">
@@ -24,6 +42,21 @@ const { state, route = "/thoughts" } = Astro.props;
     </div>
   </header>
 
+  <section class="field-stats" aria-label="Log metrics">
+    <div class="field-stat">
+      <span>ENTRIES</span>
+      <strong>{String(totalEntries).padStart(2, "0")}</strong>
+    </div>
+    <div class="field-stat">
+      <span>TAGS</span>
+      <strong>{String(totalTags).padStart(2, "0")}</strong>
+    </div>
+    <div class="field-stat">
+      <span>VOL</span>
+      <strong>2026.01</strong>
+    </div>
+  </section>
+
   <p class="field-intro">
     Notes from the workbench: systems, markets, terminals, interfaces, and small tools that earn their place.
   </p>
@@ -33,20 +66,35 @@ const { state, route = "/thoughts" } = Astro.props;
       <h2>Selected Entries</h2>
       <span></span>
     </div>
-    <div class="filters">
-      <span>Recent</span><i>/</i><span>Engineering</span><i>/</i><span>Systems</span>
-    </div>
-    <div class="entry-list">
-      {thoughts.map((entry) => (
-        <a href={entry.href}>
-          <div>
-            <strong>{entry.title}</strong>
-            <p>{entry.summary}</p>
-            <em>{entry.href}</em>
-          </div>
-          <time>{entry.date}</time>
-        </a>
+    <div class="filters" role="tablist" aria-label="Filter by tag">
+      <button class="filter-chip selected" data-filter="*" type="button">
+        ALL · {totalEntries}
+      </button>
+      {tags.map(([tag, count]) => (
+        <button class="filter-chip" data-filter={tag} type="button">
+          {tag.toUpperCase()} · {count}
+        </button>
       ))}
+    </div>
+    <div class="entry-list" data-entry-list>
+      {entries.map((entry) => {
+        const href = `/thoughts/${entry.id}`;
+        const dateLabel = entry.data.date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        });
+        return (
+          <a href={href} data-tag={entry.data.tag}>
+            <div>
+              <strong>{entry.data.title}</strong>
+              <p>{entry.data.summary}</p>
+              <em>{href}</em>
+            </div>
+            <time>{dateLabel}</time>
+          </a>
+        );
+      })}
     </div>
   </section>
 
@@ -56,3 +104,29 @@ const { state, route = "/thoughts" } = Astro.props;
     <Barcode />
   </footer>
 </article>
+
+<script>
+  const init = () => {
+    const root = document.querySelector(".thoughts-sheet");
+    if (!root) return;
+    if (root.hasAttribute("data-filter-bound")) return;
+    root.setAttribute("data-filter-bound", "1");
+
+    const chips = root.querySelectorAll<HTMLButtonElement>(".filter-chip");
+    const entries = root.querySelectorAll<HTMLAnchorElement>("[data-tag]");
+
+    chips.forEach((chip) => {
+      chip.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const filter = chip.dataset.filter ?? "*";
+        chips.forEach((c) => c.classList.toggle("selected", c === chip));
+        entries.forEach((entry) => {
+          const matches = filter === "*" || entry.dataset.tag === filter;
+          entry.classList.toggle("hidden", !matches);
+        });
+      });
+    });
+  };
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>

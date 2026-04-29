@@ -8,25 +8,50 @@ interface Props {
 }
 
 const { state, route = "/artifacts" } = Astro.props;
+const total = artifacts.length;
 ---
 
-<article class:list={["sheet", "archive-sheet", state]} data-sheet="artifacts" data-route={route}>
+<article
+  class:list={["sheet", "archive-sheet", state]}
+  data-sheet="artifacts"
+  data-route={route}
+  transition:name="sheet-archive"
+>
   <div class="paper-grain"></div>
   <div class="blue-grid"></div>
+  <svg class="distance-rings" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+    <circle cx="50" cy="50" r="20" />
+    <circle cx="50" cy="50" r="32" />
+    <circle cx="50" cy="50" r="44" />
+    <circle cx="50" cy="50" r="56" />
+  </svg>
   <header class="archive-head">
     <span>Spec_Archive</span>
     <h1>System_Archive</h1>
     <p>Registry_Index // Artifacts</p>
     <small>Vol. 2026.01</small>
-    <div>
-      <label>Date<strong>Wed, Apr 29, 2026</strong></label>
-      <label>Log_Time<strong>05:12 AM</strong></label>
-      <label>Status<strong>Verified</strong></label>
+    <div class="archive-stat-row">
+      <div class="archive-stat">
+        <span>Date</span>
+        <strong>Wed, Apr 29, 2026</strong>
+      </div>
+      <div class="archive-stat">
+        <span>Log_Time</span>
+        <strong>05:12 AM</strong>
+      </div>
+      <div class="archive-stat">
+        <span>Status</span>
+        <strong>Verified</strong>
+      </div>
     </div>
   </header>
 
   <section class="registry">
-    <h2><i></i>Experimental_Registry</h2>
+    <h2>
+      <i></i>
+      <span class="registry-title">Experimental_Registry</span>
+      <em class="registry-count">· {String(total).padStart(2, "0")}</em>
+    </h2>
     <div class="artifact-list">
       {artifacts.map((artifact) => (
         <a href={artifact.href}>
@@ -61,7 +86,6 @@ const { state, route = "/artifacts" } = Astro.props;
           <circle cx="198" cy="22" r="2" />
           <circle cx="232" cy="32" r="2.4" />
         </g>
-        <text x="6" y="74" class="constellation-tag">RA 18h27m // DEC -04°37'</text>
       </svg>
     </div>
     <div>
