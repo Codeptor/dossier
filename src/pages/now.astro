@@ -1,0 +1,252 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+export const prerender = false;
+
+const LASTFM_USER = "esoterikunt";
+
+async function getRecentTrack(): Promise<string | null> {
+  const key = import.meta.env.LASTFM_API_KEY;
+  if (!key) return null;
+  const url =
+    `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks` +
+    `&user=${LASTFM_USER}&api_key=${key}&format=json&limit=1`;
+  try {
+    const res = await fetch(url, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const track = data?.recenttracks?.track?.[0];
+    if (!track) return null;
+    const isNow = track["@attr"]?.nowplaying === "true";
+    const name = track.name as string;
+    const artist = track.artist?.["#text"] as string;
+    if (!name || !artist) return null;
+    const tag = isNow ? "now playing" : "last played";
+    return `${name} — ${artist} · ${tag} · last.fm/${LASTFM_USER}`;
+  } catch {
+    return null;
+  }
+}
+
+// Cache the page at the edge for 60s, serve stale up to 5min while revalidating.
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=60, stale-while-revalidate=300",
+);
+
+const listening =
+  (await getRecentTrack()) ??
+  `last.fm/${LASTFM_USER} — set LASTFM_API_KEY to populate this row live.`;
+
+const focus: { label: string; value: string }[] = [
+  {
+    label: "Building",
+    value: "this dossier — three-sheet manifest with view-transition swaps and a real field log.",
+  },
+  {
+    label: "Shipping",
+    value: "Kharcha — public AI usage dashboard aggregating Claude Code, Codex, OpenCode, Kimi spend.",
+  },
+  {
+    label: "Tinkering",
+    value: "Astrolabe — Pioneer-plaque-style pulsar map, 14 pulsars selected by greedy GDOP.",
+  },
+  {
+    label: "Writing",
+    value: "field-log entries on view transitions, dithering, idempotent sync, and Rust audio threading.",
+  },
+  {
+    label: "Reading",
+    value: "\"Breasts and Eggs\" — Mieko Kawakami.",
+  },
+  {
+    label: "Listening",
+    value: listening,
+  },
+  {
+    label: "Location",
+    value: "India · IST.",
+  },
+  {
+    label: "Open to",
+    value: "freelance frontend / creative-coding work and full-time roles at small teams.",
+  },
+];
+const updatedAt = "APR 29 2026";
+---
+
+<BaseLayout title={`Now // ${profile.handle}`} description={`What ${profile.name} is working on right now.`}>
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>STATUS_REPORT</span>
+        <h1>Now_Log</h1>
+        <p>What I am focused on right now</p>
+        <small>UPDATED {updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        {focus.length === 0 ? (
+          <div class="now-empty">
+            <p>No current entries.</p>
+            <p class="hint">// Drop a list of bullets in <code>src/pages/now.astro</code></p>
+          </div>
+        ) : (
+          <ul>
+            {focus.map((row) => (
+              <li>
+                <span>{row.label}</span>
+                <strong>{row.value}</strong>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .now-shell {
+    min-height: 100vh;
+    padding: 96px 16px 96px;
+    display: grid;
+    place-items: start center;
+    background:
+      radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.04), transparent 24rem),
+      var(--bg);
+  }
+  .now-frame {
+    width: min(100%, 640px);
+    padding: 40px 40px 32px;
+    border: 1px solid color-mix(in srgb, var(--field-ink) 24%, transparent);
+    background:
+      radial-gradient(circle at 80% -8%, var(--field-glow), transparent 40%),
+      var(--field-bg);
+    color: var(--field-ink);
+    font-family: var(--mono);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+    position: relative;
+  }
+  .now-head {
+    position: relative;
+    padding-bottom: 18px;
+    border-bottom: 1px solid color-mix(in srgb, var(--field-ink) 28%, transparent);
+  }
+  .now-head > span {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    padding: 6px 10px;
+    background: var(--field-ink);
+    color: var(--field-bg);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .now-head h1 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 32px;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+    color: var(--field-ink);
+  }
+  .now-head p {
+    margin: 8px 0 0;
+    color: color-mix(in srgb, var(--field-ink) 65%, transparent);
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .now-head small {
+    position: absolute;
+    right: 0;
+    bottom: 22px;
+    font-size: 9px;
+    color: color-mix(in srgb, var(--field-ink) 50%, transparent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .now-body {
+    margin-top: 22px;
+  }
+  .now-empty {
+    padding: 22px 0;
+    text-align: center;
+    color: color-mix(in srgb, var(--field-ink) 55%, transparent);
+    font-size: 12px;
+  }
+  .now-empty .hint {
+    margin-top: 6px;
+    font-size: 10px;
+    color: color-mix(in srgb, var(--field-ink) 40%, transparent);
+  }
+  .now-empty code {
+    color: var(--field-ink);
+  }
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+  }
+  li {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 14px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--field-ink) 18%, transparent);
+    background: color-mix(in srgb, var(--field-ink) 3%, transparent);
+    font-size: 12px;
+  }
+  li span {
+    color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  li strong {
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    color: var(--field-ink);
+  }
+  .now-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid color-mix(in srgb, var(--field-ink) 24%, transparent);
+  }
+  .now-foot a {
+    color: var(--field-ink);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    text-decoration: none;
+  }
+  .now-foot a:hover {
+    text-decoration: underline;
+  }
+  @media (max-width: 540px) {
+    li {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+</style>
