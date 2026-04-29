@@ -45,20 +45,24 @@ const personLd = {
       // Apply the persisted theme synchronously before first paint, AND on
       // every Astro view-transition swap (the ClientRouter merges html
       // attributes from the new doc, which would otherwise wipe data-theme).
+      // First-time visitors fall back to prefers-color-scheme.
       (function () {
         var KEY = "codeptor-theme";
         var THEMES = ["dark", "blueprint", "plaque", "light"];
-        function get() {
+        function resolve() {
           try {
             var t = localStorage.getItem(KEY);
-            return t && THEMES.indexOf(t) !== -1 ? t : null;
-          } catch (_) {
-            return null;
-          }
+            if (t && THEMES.indexOf(t) !== -1) return t;
+          } catch (_) {}
+          try {
+            if (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) {
+              return "light";
+            }
+          } catch (_) {}
+          return "dark";
         }
         function applyTo(root) {
-          var t = get();
-          if (t) root.dataset.theme = t;
+          root.dataset.theme = resolve();
         }
         applyTo(document.documentElement);
         document.addEventListener("astro:before-swap", function (e) {
@@ -87,6 +91,28 @@ const personLd = {
   </head>
   <body>
     <slot />
+
+    <dialog class="shortcut-modal" data-shortcut-modal>
+      <article>
+        <header>
+          <h2>Keyboard Shortcuts</h2>
+          <button type="button" data-shortcut-close aria-label="Close">×</button>
+        </header>
+        <dl>
+          <dt><kbd>1</kbd> / <kbd>h</kbd></dt><dd>Manifest (home)</dd>
+          <dt><kbd>2</kbd></dt><dd>Field Log (thoughts)</dd>
+          <dt><kbd>3</kbd> / <kbd>a</kbd></dt><dd>Archive (artifacts)</dd>
+          <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Cycle sheets</dd>
+          <dt><kbd>t</kbd></dt><dd>Cycle theme</dd>
+          <dt><kbd>?</kbd></dt><dd>Toggle this panel</dd>
+          <dt><kbd>Esc</kbd></dt><dd>Close panel</dd>
+        </dl>
+        <footer>
+          <span>// codeptor / dossier</span>
+        </footer>
+      </article>
+    </dialog>
+
     <script>
       // Scale fixed-size iframe artifacts (1280x720 desktop renders) down to
       // their container width via a ResizeObserver. Avoids the cqi/transform
@@ -109,13 +135,64 @@ const personLd = {
             ro.observe(el);
           }
           apply(el);
-          // Promote to scaled (fixed-size + transform) mode now that JS is
-          // ready. CSS leaves the iframe fluid until this attribute is set.
           el.dataset.scaled = "1";
         });
       };
       wire();
       document.addEventListener("astro:page-load", wire);
+
+      // Copy buttons on every code block. Adds a small button in the top-right
+      // of each <pre>; click copies the inner text via the Clipboard API.
+      const wireCopyButtons = () => {
+        document.querySelectorAll<HTMLPreElement>(".reading-body pre").forEach((pre) => {
+          if (pre.querySelector(".copy-btn")) return;
+          const btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "copy-btn";
+          btn.textContent = "copy";
+          btn.setAttribute("aria-label", "Copy code to clipboard");
+          btn.addEventListener("click", async () => {
+            const code = pre.querySelector("code")?.textContent ?? pre.textContent ?? "";
+            try {
+              await navigator.clipboard.writeText(code);
+              btn.textContent = "copied";
+              setTimeout(() => (btn.textContent = "copy"), 1500);
+            } catch {
+              btn.textContent = "error";
+              setTimeout(() => (btn.textContent = "copy"), 1500);
+            }
+          });
+          pre.appendChild(btn);
+        });
+      };
+      wireCopyButtons();
+      document.addEventListener("astro:page-load", wireCopyButtons);
+
+      // Help modal — `?` key toggles, Esc closes. Bound once per body lifetime.
+      const modal = document.querySelector<HTMLDialogElement>("[data-shortcut-modal]");
+      const closeBtn = document.querySelector<HTMLButtonElement>("[data-shortcut-close]");
+      closeBtn?.addEventListener("click", () => modal?.close());
+      modal?.addEventListener("click", (e) => {
+        if (e.target === modal) modal.close();
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+        const target = e.target as HTMLElement | null;
+        if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+        if (e.key === "?" || (e.shiftKey && e.key === "/")) {
+          e.preventDefault();
+          if (!modal) return;
+          modal.open ? modal.close() : modal.showModal();
+        } else if (e.key === "Escape" && modal?.open) {
+          modal.close();
+        }
+      });
+    </script>
+
+    <script>
+      // Vercel Analytics — privacy-friendly page-view tracking, free on hobby tier.
+      import { inject } from "@vercel/analytics";
+      inject();
     </script>
   </body>
 </html>
