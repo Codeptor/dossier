@@ -1,0 +1,36 @@
+---
+import Astrolabe from "./ArtifactAstrolabe.astro";
+import Kharcha from "./ArtifactKharcha.astro";
+import Dithered from "./ArtifactDithered.astro";
+import Mausam from "./ArtifactMausam.astro";
+import Aurora from "./ArtifactAurora.astro";
+import Entropy from "./ArtifactEntropy.astro";
+import Wezterm from "./ArtifactWezterm.astro";
+import Dossier from "./ArtifactDossier.astro";
+
+interface Props {
+  slug: string;
+}
+
+const { slug } = Astro.props;
+
+const map: Record<string, any> = {
+  astrolabe: Astrolabe,
+  kharcha: Kharcha,
+  dithered: Dithered,
+  mausam: Mausam,
+  aurora: Aurora,
+  entropy: Entropy,
+  "wezterm-presence": Wezterm,
+  dossier: Dossier,
+};
+
+const Component = map[slug] ?? null;
+---
+
+{Component && (
+  <aside class="post-artifact" aria-label={`Artifact: ${slug}`}>
+    <Component />
+    <span class="post-artifact-tag">// {slug}</span>
+  </aside>
+)}

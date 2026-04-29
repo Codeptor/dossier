@@ -1,0 +1,49 @@
+---
+interface Props {
+  data: number[];
+  width?: number;
+  height?: number;
+}
+
+const { data, width = 480, height = 56 } = Astro.props;
+const max = Math.max(1, ...data);
+const stepX = data.length > 1 ? width / (data.length - 1) : 0;
+const points = data
+  .map((v, i) => `${(i * stepX).toFixed(2)},${(height - (v / max) * height).toFixed(2)}`)
+  .join(" ");
+const areaPoints = `0,${height} ${points} ${width},${height}`;
+const dotsAt = data.length - 1;
+---
+
+<svg
+  class="sparkline"
+  viewBox={`0 0 ${width} ${height}`}
+  preserveAspectRatio="none"
+  role="img"
+  aria-label="Activity trace"
+>
+  <defs>
+    <linearGradient id="sparkfill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="currentColor" stop-opacity="0.18" />
+      <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <polygon points={areaPoints} fill="url(#sparkfill)" />
+  <polyline
+    points={points}
+    fill="none"
+    stroke="currentColor"
+    stroke-width="1.2"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+  {data.map((v, i) => (
+    <circle
+      cx={(i * stepX).toFixed(2)}
+      cy={(height - (v / max) * height).toFixed(2)}
+      r={i === dotsAt ? 2.4 : 1}
+      fill="currentColor"
+      opacity={i === dotsAt ? 1 : 0.45}
+    />
+  ))}
+</svg>

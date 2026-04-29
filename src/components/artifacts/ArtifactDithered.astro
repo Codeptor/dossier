@@ -1,0 +1,150 @@
+---
+// Direct port of the landing-page shader from
+// ~/dithered/apps/web/components/landing/hero.tsx — same noise function,
+// same character ramp, same cell size, same FPS, same green tint.
+// Vanilla TS so the artifact is one component with no React island.
+---
+
+<div class="art art-dithered">
+  <div class="d-frame">
+    <canvas data-d-canvas aria-label="Dithered landing-page shader (procedural ASCII noise)"></canvas>
+  </div>
+  <div class="d-caption">
+    <span>HERO SHADER · DITHERED.BHANUESO.DEV</span>
+    <em>14 PX CELL · MAX 15K · 30 FPS</em>
+  </div>
+</div>
+
+<script>
+  const ASCII_CHARS = " .:-=+*#%@";
+  const CELL_SIZE = 14;
+  const MAX_CELLS = 15000;
+  const TARGET_FPS = 30;
+  const FRAME_MS = 1000 / TARGET_FPS;
+
+  const init = () => {
+    document.querySelectorAll<HTMLCanvasElement>("[data-d-canvas]").forEach((canvas) => {
+      if (canvas.dataset.bound) return;
+      canvas.dataset.bound = "1";
+
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
+
+      let raf = 0;
+      let last = 0;
+      let stop = false;
+      const start = performance.now();
+
+      const resize = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(80, Math.round(rect.width * dpr));
+        const h = Math.max(80, Math.round(rect.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+      };
+
+      const themeColors = () => {
+        const styles = getComputedStyle(canvas);
+        const bg = styles.getPropertyValue("--art-shader-bg").trim() || "#0a0a0a";
+        const ink = styles.getPropertyValue("--art-shader-ink").trim() || "142, 218, 154";
+        const [r, g, b] = ink
+          .split(",")
+          .map((v) => Math.max(0, Math.min(255, parseInt(v.trim(), 10) || 0)));
+        return { bg, r, g, b };
+      };
+
+      const draw = (now: number) => {
+        if (stop) return;
+        if (now - last < FRAME_MS) {
+          raf = requestAnimationFrame(draw);
+          return;
+        }
+        last = now;
+
+        resize();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = canvas.width / dpr;
+        const height = canvas.height / dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const cols = Math.min(
+          Math.ceil(width / CELL_SIZE),
+          Math.floor(Math.sqrt(MAX_CELLS * (width / height))),
+        );
+        const rows = Math.min(
+          Math.ceil(height / CELL_SIZE),
+          Math.floor(MAX_CELLS / cols),
+        );
+        const cellW = width / cols;
+        const cellH = height / rows;
+        const time = (now - start) / 1000;
+
+        const { bg, r, g, b } = themeColors();
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = `${CELL_SIZE - 2}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const nx = (col / cols) * 4;
+            const ny = (row / rows) * 4;
+            const noise =
+              (Math.sin(nx + time * 0.5) * Math.cos(ny + time * 0.3) +
+                Math.sin(nx * 2.1 - time * 0.7) * Math.cos(ny * 1.8 + time * 0.4)) *
+                0.5 +
+              0.5;
+
+            const charIndex = Math.floor(noise * (ASCII_CHARS.length - 1));
+            const char = ASCII_CHARS[charIndex];
+
+            // Same alpha + tonal-modulation curve as the original — ink RGB
+            // pulled from the live CSS theme tokens so theme cycles propagate.
+            const alpha = 0.08 + noise * 0.20;
+            const k = 0.7 + noise * 0.3;
+            const cr = Math.round(r * k);
+            const cg = Math.round(g * k);
+            const cb = Math.round(b * k);
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${alpha})`;
+
+            const x = col * cellW + cellW / 2;
+            const y = row * cellH + cellH / 2;
+            ctx.fillText(char, x, y);
+          }
+        }
+
+        raf = requestAnimationFrame(draw);
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting && !raf) {
+              raf = requestAnimationFrame(draw);
+            } else if (!entry.isIntersecting && raf) {
+              cancelAnimationFrame(raf);
+              raf = 0;
+            }
+          }
+        },
+        { threshold: 0.05 },
+      );
+      observer.observe(canvas);
+
+      const cleanup = () => {
+        stop = true;
+        if (raf) cancelAnimationFrame(raf);
+        observer.disconnect();
+      };
+      document.addEventListener("astro:before-swap", cleanup, { once: true });
+    });
+  };
+
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>

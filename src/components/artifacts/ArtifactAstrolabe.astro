@@ -1,0 +1,23 @@
+---
+// Live embed of astrolabe.bhanueso.dev. The site sets
+// `Content-Security-Policy: frame-ancestors *` so the iframe loads anywhere.
+// Iframe is rendered at a fixed 1280x720 desktop viewport and scaled to fit
+// via a ResizeObserver — CSS cqi math has paint-timing issues on first load.
+---
+
+<div class="art art-astrolabe">
+  <div class="a-frame" data-scaled-frame data-target-width="1280" data-target-height="720">
+    <iframe
+      src="https://astrolabe.bhanueso.dev/"
+      title="Astrolabe — interactive Pioneer-plaque pulsar map"
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      allow="fullscreen"
+    ></iframe>
+  </div>
+  <div class="a-caption">
+    <span>LIVE · ASTROLABE.BHANUESO.DEV</span>
+    <em>14 PULSARS · GDOP · ATNF v2.7.0</em>
+  </div>
+</div>

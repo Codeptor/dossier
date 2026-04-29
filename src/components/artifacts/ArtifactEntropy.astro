@@ -1,0 +1,44 @@
+---
+const W = 280;
+const H = 32;
+const cols = 64;
+const dx = W / cols;
+const playedFrac = 0.42;
+
+const bars = Array.from({ length: cols }, (_, i) => {
+  const t = i / cols;
+  const env =
+    0.45 +
+    0.35 * Math.abs(Math.sin(t * 9.2 + 1.4)) +
+    0.18 * Math.abs(Math.sin(t * 23 + 0.6));
+  const h = Math.max(2, env * (H - 4));
+  const x = i * dx;
+  return {
+    x: x.toFixed(2),
+    y: ((H - h) / 2).toFixed(2),
+    w: (dx - 0.8).toFixed(2),
+    h: h.toFixed(2),
+    op: t <= playedFrac ? "0.9" : "0.32",
+  };
+});
+---
+
+<div class="art art-entropy" aria-hidden="true">
+  <div class="e-row">
+    <span class="e-play">⏵</span>
+    <div class="e-track">
+      <strong>track.flac</strong>
+      <span>artist · album · 2026</span>
+    </div>
+    <span class="e-time">02:14 / 03:48</span>
+  </div>
+  <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" class="e-wave">
+    {bars.map((b) => (
+      <rect x={b.x} y={b.y} width={b.w} height={b.h} fill="currentColor" opacity={b.op} />
+    ))}
+  </svg>
+  <div class="e-meta">
+    <span>FLAC · 44.1 KHZ · 16 BIT · STEREO</span>
+    <em>RG -6.4 dB · GAPLESS</em>
+  </div>
+</div>

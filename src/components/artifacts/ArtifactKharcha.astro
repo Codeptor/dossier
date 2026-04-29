@@ -1,0 +1,22 @@
+---
+// Live embed of kharcha.bhanueso.dev. The site sets
+// `Content-Security-Policy: frame-ancestors *` so the iframe loads anywhere.
+// Iframe rendered at fixed 1280x720 desktop viewport, scaled via ResizeObserver.
+---
+
+<div class="art art-kharcha">
+  <div class="k-frame" data-scaled-frame data-target-width="1280" data-target-height="720">
+    <iframe
+      src="https://kharcha.bhanueso.dev/"
+      title="Kharcha — public AI usage dashboard"
+      loading="lazy"
+      referrerpolicy="strict-origin-when-cross-origin"
+      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+      allow="fullscreen"
+    ></iframe>
+  </div>
+  <div class="k-caption">
+    <span>LIVE · KHARCHA.BHANUESO.DEV</span>
+    <em>DAILY ROLLUP · DEDUPE_KEY = SHA256</em>
+  </div>
+</div>
