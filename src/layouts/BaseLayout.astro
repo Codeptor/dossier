@@ -80,7 +80,7 @@ const personLd = {
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:creator" content="@esotericfrr" />
 
-    <script type="application/ld+json" set:html={JSON.stringify(personLd)} />
+    <script is:inline type="application/ld+json" set:html={JSON.stringify(personLd)} />
 
     <title>{title}</title>
     <ClientRouter />
@@ -109,6 +109,9 @@ const personLd = {
             ro.observe(el);
           }
           apply(el);
+          // Promote to scaled (fixed-size + transform) mode now that JS is
+          // ready. CSS leaves the iframe fluid until this attribute is set.
+          el.dataset.scaled = "1";
         });
       };
       wire();

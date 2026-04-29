@@ -1396,15 +1396,25 @@ a {
   position: relative;
 }
 
+/* Fluid by default — fills the container at the iframe's own narrow viewport
+   width. JS upgrades this by setting data-scaled="1", which switches to a
+   fixed 1280x720 render scaled down via --frame-scale (sharper desktop layout
+   inside the smaller dossier panel). */
 .art-astrolabe .a-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #0a0a0d;
+  color-scheme: dark;
+}
+
+.art-astrolabe .a-frame[data-scaled="1"] iframe {
   position: absolute;
   top: 0;
   left: 0;
   width: 1280px;
   height: 720px;
-  border: 0;
-  background: #0a0a0d;
-  color-scheme: dark;
   transform-origin: 0 0;
   transform: scale(var(--frame-scale, 1));
 }
@@ -1441,14 +1451,21 @@ a {
   position: relative;
 }
 
+/* Fluid by default; JS upgrades via data-scaled="1" → fixed 1280x720 + scale. */
 .art-kharcha .k-frame iframe {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: var(--field-bg);
+}
+
+.art-kharcha .k-frame[data-scaled="1"] iframe {
   position: absolute;
   top: 0;
   left: 0;
   width: 1280px;
   height: 720px;
-  border: 0;
-  background: var(--field-bg);
   transform-origin: 0 0;
   transform: scale(var(--frame-scale, 1));
 }
