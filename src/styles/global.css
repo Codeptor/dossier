@@ -2674,10 +2674,17 @@ a {
 
   .manifest-head {
     /* Keep the desktop side-by-side layout — title left, dither panel right.
-       Match the proportion btn0s.dev uses on mobile (~35% panel width). */
-    grid-template-columns: 1fr 130px;
-    gap: 16px;
+       Match the proportion btn0s.dev uses on mobile (~35% panel width).
+       minmax(0, 1fr) lets the title shrink below its content width so the
+       panel column can claim its 35% without overflow. */
+    grid-template-columns: minmax(0, 1fr) clamp(90px, 35%, 130px);
+    gap: 14px;
     min-height: auto;
+  }
+
+  .manifest-head h1 {
+    font-size: 22px;
+    line-height: 0.95;
   }
 
   .scan-panel {
@@ -2776,10 +2783,11 @@ a {
     background: #e8e4d7;
   }
 
-  /* DitherPanel — pinned to the right column of manifest-head, smaller on mobile. */
+  /* DitherPanel — pinned to the right column of manifest-head, fluid sizing
+     so it follows whatever the manifest-head grid allocates. */
   .dither-panel {
     width: 100%;
-    max-width: 130px;
+    max-width: 100%;
     height: auto;
     aspect-ratio: 260 / 246;
     margin: 0;
@@ -2801,6 +2809,34 @@ a {
      Hide the morse portion at narrow widths — the name alone reads fine. */
   .manifest-id {
     display: none;
+  }
+
+  /* Header on mobile: keep brand + sound toggle only (matches btn0s' header).
+     Theme toggle hides — user can still cycle via the keyboard `t` shortcut on
+     desktop, but on mobile the sheets aren't theme-prominent enough to warrant
+     a header chip. */
+  .top-nav .theme-toggle {
+    display: none;
+  }
+
+  /* Stat-row 3-col grid overflows on narrow screens — collapse to a 3-col
+     fluid grid that wraps each tile to a smaller minimum cell. */
+  .stat-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .stat-tile {
+    padding: 10px;
+  }
+
+  .stat-tile span {
+    font-size: 7px;
+    letter-spacing: 0.18em;
+  }
+
+  .stat-tile strong {
+    font-size: 22px;
   }
 
   /* Reading view — drop the desktop 64px gutter for narrow viewports */
