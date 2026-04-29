@@ -6,14 +6,20 @@ import Barcode from "@/components/Barcode.astro";
 import { profile } from "@/data/profile";
 
 export async function getStaticPaths() {
-  const entries = await getCollection("thoughts");
-  return entries.map((entry) => ({
+  const entries = (await getCollection("thoughts")).sort(
+    (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+  );
+  return entries.map((entry, i) => ({
     params: { slug: entry.id },
-    props: { entry },
+    props: {
+      entry,
+      prev: entries[i + 1] ?? null, // older entry
+      next: entries[i - 1] ?? null, // newer entry
+    },
   }));
 }
 
-const { entry } = Astro.props;
+const { entry, prev, next } = Astro.props;
 const { Content } = await render(entry);
 
 const dateLabel = entry.data.date.toLocaleDateString("en-US", {
@@ -21,10 +27,41 @@ const dateLabel = entry.data.date.toLocaleDateString("en-US", {
   month: "long",
   day: "numeric",
 });
+
+// Reading time — body is the raw MDX source. ~200 wpm is a common
+// average for technical reading.
+const wordCount = entry.body?.split(/\s+/).filter(Boolean).length ?? 0;
+const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+
+const canonical = new URL(`/thoughts/${entry.id}/`, Astro.site ?? "https://bhanueso.dev").toString();
+const ogImage = new URL("/og.png", Astro.site ?? "https://bhanueso.dev").toString();
+const articleLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: entry.data.title,
+  description: entry.data.summary,
+  datePublished: entry.data.date.toISOString(),
+  dateModified: entry.data.date.toISOString(),
+  author: {
+    "@type": "Person",
+    name: profile.name,
+    url: Astro.site?.toString() ?? "https://bhanueso.dev",
+  },
+  publisher: {
+    "@type": "Person",
+    name: profile.name,
+  },
+  url: canonical,
+  image: ogImage,
+  articleSection: entry.data.tag,
+  wordCount,
+  mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+};
 ---
 
 <BaseLayout title={`${entry.data.title} // Field Log // Bhanu`} description={entry.data.summary}>
   <Nav active="thoughts" />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(articleLd)} />
   <main class="reading-shell">
     <article class="reading-sheet">
       <header class="reading-head">
@@ -34,6 +71,8 @@ const dateLabel = entry.data.date.toLocaleDateString("en-US", {
           <time>{dateLabel}</time>
           <span>·</span>
           <em>{entry.data.tag}</em>
+          <span>·</span>
+          <em>{readingMinutes} min read</em>
         </div>
         <p class="reading-summary">{entry.data.summary}</p>
       </header>
@@ -41,6 +80,31 @@ const dateLabel = entry.data.date.toLocaleDateString("en-US", {
       <section class="reading-body">
         <Content />
       </section>
+
+      <nav class="reading-pager" aria-label="Field Log navigation">
+        {prev ? (
+          <a class="pager-link prev" href={`/thoughts/${prev.id}`}>
+            <span>← Older</span>
+            <strong>{prev.data.title}</strong>
+          </a>
+        ) : (
+          <span class="pager-link disabled">
+            <span>← Older</span>
+            <strong>End of log</strong>
+          </span>
+        )}
+        {next ? (
+          <a class="pager-link next" href={`/thoughts/${next.id}`}>
+            <span>Newer →</span>
+            <strong>{next.data.title}</strong>
+          </a>
+        ) : (
+          <span class="pager-link disabled">
+            <span>Newer →</span>
+            <strong>Latest entry</strong>
+          </span>
+        )}
+      </nav>
 
       <footer class="reading-foot">
         <a href="/thoughts" class="reading-back">← Field Log</a>
