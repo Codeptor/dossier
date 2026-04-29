@@ -1,0 +1,262 @@
+---
+// 260x246 ASCII / dithering canvas for the manifest head — replaces the
+// pulsar plaque with a live halftone shader that ties back to the
+// ascii-dither-shader and ascii-shader-tsx agent skills + dithered.bhanueso.dev.
+//
+// Same noise function as ArtifactDithered, smaller cell + lower FPS so the
+// panel stays cheap when sitting permanently on the manifest sheet.
+---
+
+<div class="dither-panel" aria-hidden="true">
+  <canvas data-dp-canvas aria-label="Live ASCII dithering halftone"></canvas>
+  <div class="dp-overlay">
+    <span class="dp-tl">ASCII_DITHER // 0x10</span>
+    <span class="dp-tr">FBM · WARP · 4 THEME</span>
+    <span class="dp-bl">SHADER_SKILL</span>
+    <span class="dp-br" data-dp-fps>00 FPS</span>
+  </div>
+</div>
+
+<script>
+  // Per-theme character ramps — each theme's palette gets a charset that
+  // matches its visual register (terminal vs draft paper vs print vs braille).
+  const RAMPS: Record<string, string> = {
+    dark: " .:-=+*#%@",
+    blueprint: " ░▒▓█",
+    plaque: " .,:;~*@",
+    light: " ⠁⠃⠇⠧⠷⠿⣿",
+  };
+
+  const CELL_SIZE = 8;
+  const TARGET_FPS = 24;
+  const FRAME_MS = 1000 / TARGET_FPS;
+  const OCTAVES = 3;
+  const MOUSE_RADIUS = 0.40;
+  const MOUSE_PUSH = 1.4;
+
+  const init = () => {
+    document.querySelectorAll<HTMLCanvasElement>("[data-dp-canvas]").forEach((canvas) => {
+      if (canvas.dataset.bound) return;
+      canvas.dataset.bound = "1";
+
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) return;
+
+      const panelEl = canvas.closest(".dither-panel") as HTMLElement | null;
+      const fpsEl = panelEl?.querySelector("[data-dp-fps]") as HTMLElement | null;
+
+      let raf = 0;
+      let last = 0;
+      let stop = false;
+      const start = performance.now();
+
+      // Persistent noise buffer — reused frame to frame, reallocated only when
+      // the cell grid resizes. Avoids GC pressure at 24fps.
+      let buffer: Float32Array | null = null;
+      let bufCols = 0;
+      let bufRows = 0;
+
+      // Mouse / pointer state. Targets are set by listeners; cur* are lerped
+      // toward target each frame so the warp eases in/out instead of snapping.
+      let targetMouseX = 0.5;
+      let targetMouseY = 0.5;
+      let mouseHovering = false;
+      let curMouseX = 0.5;
+      let curMouseY = 0.5;
+      let mouseStrength = 0;
+
+      // FPS readout state — counted per draw call, flushed to DOM ~4x/sec.
+      let fpsCount = 0;
+      let fpsLast = start;
+
+      const onMove = (e: PointerEvent) => {
+        const rect = canvas.getBoundingClientRect();
+        targetMouseX = (e.clientX - rect.left) / rect.width;
+        targetMouseY = (e.clientY - rect.top) / rect.height;
+        mouseHovering = true;
+      };
+      const onLeave = () => {
+        mouseHovering = false;
+      };
+      canvas.addEventListener("pointermove", onMove);
+      canvas.addEventListener("pointerleave", onLeave);
+
+      const resize = () => {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const w = Math.max(80, Math.round(rect.width * dpr));
+        const h = Math.max(80, Math.round(rect.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+        }
+      };
+
+      const themeColors = () => {
+        const styles = getComputedStyle(canvas);
+        const bg = styles.getPropertyValue("--art-shader-bg").trim() || "#0a0a0a";
+        const ink = styles.getPropertyValue("--art-shader-ink").trim() || "142, 218, 154";
+        const [r, g, b] = ink
+          .split(",")
+          .map((v) => Math.max(0, Math.min(255, parseInt(v.trim(), 10) || 0)));
+        const themeKey = document.documentElement.dataset.theme || "dark";
+        const ramp = RAMPS[themeKey] || RAMPS.dark;
+        return { bg, r, g, b, ramp };
+      };
+
+      // Base 2D noise — same product-of-trig pattern as the dithered hero,
+      // kept cheap so 3 octaves of fBm + a domain-warp pass stay under budget.
+      const noise2d = (x: number, y: number, t: number) =>
+        (Math.sin(x + t * 0.5) * Math.cos(y + t * 0.3) +
+          Math.sin(x * 2.1 - t * 0.7) * Math.cos(y * 1.8 + t * 0.4)) *
+          0.5 +
+        0.5;
+
+      const fbm = (x: number, y: number, t: number) => {
+        let value = 0;
+        let amp = 1;
+        let freq = 1;
+        let max = 0;
+        for (let i = 0; i < OCTAVES; i++) {
+          value += amp * noise2d(x * freq + i * 17, y * freq + i * 23, t);
+          max += amp;
+          freq *= 2;
+          amp *= 0.5;
+        }
+        return value / max;
+      };
+
+      const draw = (now: number) => {
+        if (stop) return;
+        if (now - last < FRAME_MS) {
+          raf = requestAnimationFrame(draw);
+          return;
+        }
+        last = now;
+
+        resize();
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const width = canvas.width / dpr;
+        const height = canvas.height / dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        const cols = Math.max(1, Math.ceil(width / CELL_SIZE));
+        const rows = Math.max(1, Math.ceil(height / CELL_SIZE));
+        const cellW = width / cols;
+        const cellH = height / rows;
+        const time = (now - start) / 1000;
+
+        if (!buffer || cols !== bufCols || rows !== bufRows) {
+          buffer = new Float32Array(cols * rows);
+          bufCols = cols;
+          bufRows = rows;
+        }
+
+        const { bg, r, g, b, ramp } = themeColors();
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.font = `${CELL_SIZE - 1}px monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+
+        // Ease mouse target — strength fades in on enter, out on leave.
+        if (mouseHovering) {
+          curMouseX += (targetMouseX - curMouseX) * 0.15;
+          curMouseY += (targetMouseY - curMouseY) * 0.15;
+          mouseStrength += (1 - mouseStrength) * 0.08;
+        } else {
+          mouseStrength += (0 - mouseStrength) * 0.08;
+        }
+
+        // Pass 1: fill the noise buffer with domain-warped fBm,
+        // optionally pushed by the cursor (radial repulsion with falloff).
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            let nx = (col / cols) * 4;
+            let ny = (row / rows) * 4;
+
+            if (mouseStrength > 0.001) {
+              const dx = col / cols - curMouseX;
+              const dy = row / rows - curMouseY;
+              const dist = Math.sqrt(dx * dx + dy * dy);
+              if (dist < MOUSE_RADIUS) {
+                const falloff = 1 - dist / MOUSE_RADIUS;
+                const push = falloff * falloff * MOUSE_PUSH * mouseStrength;
+                nx += dx * push * 4;
+                ny += dy * push * 4;
+              }
+            }
+
+            // Domain-warped fBm: use one fBm call to perturb the input
+            // coordinates of the next, producing organic non-repeating shapes.
+            const wx = fbm(nx, ny, time);
+            const wy = fbm(nx + 5.2, ny + 1.3, time);
+            buffer[row * cols + col] = fbm(nx + 4 * wx, ny + 4 * wy, time);
+          }
+        }
+
+        const rampLen = ramp.length;
+
+        // Pass 2: brightness ramp from the cached noise buffer.
+        for (let row = 0; row < rows; row++) {
+          for (let col = 0; col < cols; col++) {
+            const center = buffer[row * cols + col];
+
+            const charIndex = Math.floor(center * (rampLen - 1));
+            const char = ramp[charIndex];
+
+            const alpha = 0.10 + center * 0.30;
+            const k = 0.65 + center * 0.35;
+            const cr = Math.round(r * k);
+            const cg = Math.round(g * k);
+            const cb = Math.round(b * k);
+            ctx.fillStyle = `rgba(${cr}, ${cg}, ${cb}, ${alpha})`;
+
+            const x = col * cellW + cellW / 2;
+            const y = row * cellH + cellH / 2;
+            ctx.fillText(char, x, y);
+          }
+        }
+
+        // Flush FPS readout 4x per second so the corner counter stays steady.
+        fpsCount++;
+        if (now - fpsLast >= 250) {
+          const fps = Math.round((fpsCount * 1000) / (now - fpsLast));
+          if (fpsEl) fpsEl.textContent = `${String(fps).padStart(2, "0")} FPS`;
+          fpsCount = 0;
+          fpsLast = now;
+        }
+
+        raf = requestAnimationFrame(draw);
+      };
+
+      const observer = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            if (entry.isIntersecting && !raf) {
+              raf = requestAnimationFrame(draw);
+            } else if (!entry.isIntersecting && raf) {
+              cancelAnimationFrame(raf);
+              raf = 0;
+            }
+          }
+        },
+        { threshold: 0.05 },
+      );
+      observer.observe(canvas);
+
+      const cleanup = () => {
+        stop = true;
+        if (raf) cancelAnimationFrame(raf);
+        observer.disconnect();
+        canvas.removeEventListener("pointermove", onMove);
+        canvas.removeEventListener("pointerleave", onLeave);
+      };
+      document.addEventListener("astro:before-swap", cleanup, { once: true });
+    });
+  };
+
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>

@@ -98,8 +98,15 @@ const totalTags = Object.keys(tagCounts).length;
     </div>
   </section>
 
+  <div class="field-stamp" aria-hidden="true">
+    <div class="field-stamp-inner">
+      <em>FILED</em>
+      <strong>END_OF_LOG</strong>
+      <span>BHN_CLR_A2 · {profile.year}</span>
+    </div>
+  </div>
+
   <footer class="field-foot">
-    <div><span></span><em>Fin.</em><span></span></div>
     <p>{profile.name.toUpperCase()} // {profile.year}</p>
     <Barcode />
   </footer>

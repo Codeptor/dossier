@@ -1,7 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import Barcode from "@/components/Barcode.astro";
-import PulsarPlaque from "@/components/PulsarPlaque.astro";
+import DitherPanel from "@/components/DitherPanel.astro";
 import Sparkline from "@/components/Sparkline.astro";
 import { activity, artifacts, assets, capabilities, history, profile } from "@/data/profile";
 
@@ -33,7 +33,7 @@ const stats = [
       <p>Subject: {profile.name.toUpperCase()} // ID: {profile.id}</p>
       <a class="manifest-now" href="/now">NOW_LOG →</a>
     </div>
-    <PulsarPlaque />
+    <DitherPanel />
   </section>
 
   <section class="status-grid">
@@ -67,7 +67,7 @@ const stats = [
       <div class="activity-card">
         <div class="activity-meta">
           <span>OUTPUT_INDEX</span>
-          <em>last 12 mo</em>
+          <em>last 6 mo</em>
         </div>
         <Sparkline data={activity} />
       </div>
@@ -145,7 +145,7 @@ const stats = [
   <footer class="manifest-foot">
     <div>
       <span>XP_TOTAL</span>
-      <strong>FIVE_PLUS_YEARS</strong>
+      <strong>TWO_PLUS_YEARS</strong>
     </div>
     <div>
       <span>{profile.revision}</span>

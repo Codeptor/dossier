@@ -323,6 +323,30 @@ a {
   font-feature-settings: "tnum";
 }
 
+.audio-toggle {
+  margin-left: 6px;
+  padding: 4px 8px;
+  border: 0;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: color 160ms ease;
+}
+
+.audio-toggle:hover {
+  color: var(--ink);
+}
+
+.audio-toggle:focus-visible {
+  outline: 1px solid currentColor;
+  outline-offset: 2px;
+}
+
+
 .nav-links a {
   position: relative;
   display: inline-flex;
@@ -426,6 +450,7 @@ a {
   }
 }
 
+/* Default — overridden per sheet below. Kept as a safe fallback. */
 .paper-grain {
   position: absolute;
   inset: 0;
@@ -433,6 +458,89 @@ a {
   opacity: 0.12;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   mix-blend-mode: multiply;
+}
+
+/* ──── Manifest — bond-paper grain + faint 12px form grid (multiply) ──── */
+.manifest-sheet .paper-grain {
+  opacity: 1;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 11.5px,
+      color-mix(in srgb, var(--manifest-ink) 14%, transparent) 11.5px 12px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 11.5px,
+      color-mix(in srgb, var(--manifest-ink) 14%, transparent) 11.5px 12px
+    ),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.95' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: auto, auto, 200px 200px;
+  mix-blend-mode: multiply;
+}
+
+/* ──── Thoughts — coarser fiber + ruled lines (overlay).
+   The single vertical margin line lives on the .red-rule element so it stays
+   theme-aware; we don't duplicate it here. ──── */
+.thoughts-sheet .paper-grain {
+  opacity: 1;
+  background-image:
+    /* horizontal rule lines every 28px */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 27.5px,
+      color-mix(in srgb, var(--field-ink) 14%, transparent) 27.5px 28px
+    ),
+    /* coarse paper fiber */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 240 240' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.7'/%3E%3C/svg%3E");
+  background-size: auto, 240px 240px;
+  mix-blend-mode: overlay;
+}
+
+/* ──── Archive — vellum grain + tight 8px coord grid + faint cross-hatch (soft-light) ──── */
+.archive-sheet .paper-grain {
+  opacity: 1;
+  background-image:
+    /* tight 8px coordinate grid */
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 7.5px,
+      color-mix(in srgb, var(--archive-ink) 16%, transparent) 7.5px 8px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 7.5px,
+      color-mix(in srgb, var(--archive-ink) 16%, transparent) 7.5px 8px
+    ),
+    /* fine vellum noise */
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.45'/%3E%3C/svg%3E");
+  background-size: auto, auto, 200px 200px;
+  mix-blend-mode: soft-light;
+}
+
+/* Diagonal cross-hatch ribbon in the corners — separate layer via ::after
+   so we don't have to fight CSS multi-mask compositing. */
+.archive-sheet .paper-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent 0 5px,
+    color-mix(in srgb, var(--archive-ink) 22%, transparent) 5px 5.6px
+  );
+  -webkit-mask-image:
+    radial-gradient(circle at 0 0, #000 80px, transparent 110px),
+    radial-gradient(circle at 100% 0, #000 80px, transparent 110px),
+    radial-gradient(circle at 0 100%, #000 80px, transparent 110px),
+    radial-gradient(circle at 100% 100%, #000 80px, transparent 110px);
+  mask-image:
+    radial-gradient(circle at 0 0, #000 80px, transparent 110px),
+    radial-gradient(circle at 100% 0, #000 80px, transparent 110px),
+    radial-gradient(circle at 0 100%, #000 80px, transparent 110px),
+    radial-gradient(circle at 100% 100%, #000 80px, transparent 110px);
+  -webkit-mask-composite: source-over;
 }
 
 .manifest-sheet {
@@ -495,6 +603,57 @@ a {
   width: 100%;
   height: 100%;
   display: block;
+}
+
+.dither-panel {
+  position: relative;
+  width: 260px;
+  height: 246px;
+  background: var(--art-shader-bg);
+  overflow: hidden;
+  color: var(--green-ink);
+}
+
+.dither-panel canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.dither-panel .dp-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--mono);
+  font-size: 7px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--green-ink) 75%, transparent);
+  mix-blend-mode: screen;
+}
+
+.dither-panel .dp-tl {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+}
+
+.dither-panel .dp-tr {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+
+.dither-panel .dp-bl {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+}
+
+.dither-panel .dp-br {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
 }
 
 .status-grid {
@@ -832,7 +991,6 @@ a {
 }
 
 .thoughts-sheet {
-  min-height: 1280px;
   padding: 58px 66px 56px;
   overflow: hidden;
   color: var(--field-ink);
@@ -1829,8 +1987,6 @@ a {
   font-family: var(--mono-alt);
   font-size: 14px;
   font-weight: 400;
-  text-decoration: underline;
-  text-decoration-thickness: 0.05em;
   text-transform: uppercase;
   letter-spacing: 0.01em;
 }
@@ -1855,10 +2011,54 @@ a {
   white-space: nowrap;
 }
 
+.field-stamp {
+  display: flex;
+  justify-content: center;
+  margin: 64px 0 0;
+  pointer-events: none;
+}
+
+.field-stamp-inner {
+  position: relative;
+  display: grid;
+  gap: 4px;
+  padding: 12px 26px 10px;
+  border: 2px solid color-mix(in srgb, #c83a3a 75%, transparent);
+  outline: 2px solid color-mix(in srgb, #c83a3a 75%, transparent);
+  outline-offset: 3px;
+  color: color-mix(in srgb, #c83a3a 85%, transparent);
+  font-family: var(--mono);
+  text-align: center;
+  text-transform: uppercase;
+  transform: rotate(-7deg);
+  /* roughed-up rubber-stamp look — feathered edges via low-opacity layered shadow */
+  filter: contrast(0.92) saturate(0.85);
+  opacity: 0.78;
+}
+
+.field-stamp-inner em {
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.32em;
+  opacity: 0.85;
+}
+
+.field-stamp-inner strong {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.field-stamp-inner span {
+  font-size: 8px;
+  letter-spacing: 0.30em;
+  opacity: 0.70;
+}
+
 .field-foot {
   display: grid;
-  gap: 18px;
-  margin-top: 92px;
+  gap: 14px;
+  margin-top: 28px;
   text-align: center;
 }
 
