@@ -2673,18 +2673,22 @@ a {
   }
 
   .manifest-head {
-    /* Keep the desktop side-by-side layout — title left, dither panel right.
-       Match the proportion btn0s.dev uses on mobile (~35% panel width).
-       minmax(0, 1fr) lets the title shrink below its content width so the
-       panel column can claim its 35% without overflow. */
-    grid-template-columns: minmax(0, 1fr) clamp(90px, 35%, 130px);
+    /* Single-column on mobile; dither panel is hidden so the title takes
+       full width. */
+    grid-template-columns: 1fr;
     gap: 14px;
     min-height: auto;
   }
 
   .manifest-head h1 {
-    font-size: 22px;
+    font-size: 30px;
     line-height: 0.95;
+  }
+
+  /* Drop the dither artifact entirely on mobile — too small to read and
+     it eats vertical space in the header. */
+  .dither-panel {
+    display: none;
   }
 
   .scan-panel {
