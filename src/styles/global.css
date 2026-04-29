@@ -576,7 +576,6 @@ a {
   background:
     radial-gradient(circle at 20% -10%, var(--manifest-glow), transparent 40%),
     linear-gradient(180deg, var(--manifest-from), var(--manifest-to));
-  clip-path: polygon(0 0, 86% 0, 100% 18px, 100% 100%, 0 100%);
   font-family: var(--mono);
   font-size: 14px;
 }
