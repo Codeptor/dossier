@@ -1,176 +1,146 @@
+// "esoteric" → International Morse Code
+// e=. s=... o=--- t=- e=. r=.-. i=.. c=-.-.
+const ESOTERIC_MORSE = ". ... --- - . .-. .. -.-.";
+
+// Injected at build time (see scripts/build.sh / vite define). Falls back to "DEV" locally.
+const GIT_SHA = (typeof __GIT_SHA__ !== "undefined" ? __GIT_SHA__ : "DEV") as string;
+
 export const profile = {
-  handle: "bhn0s",
+  handle: "bhanueso",
   name: "Bhanu",
-  id: "01100010",
-  location: "ARCH / WSL2",
+  id: ESOTERIC_MORSE,
+  // Static fallback — replaced at runtime by the visitor's IP-geolocated city
+  // via /api/location.json (Vercel edge headers).
+  location: "EARTH",
   status: "ACTIVE_BUILD",
   year: "2026",
   revision: "REV_2026.04",
-  checksum: "CP_29_04_26",
+  checksum: `BHN.${GIT_SHA}`,
   summary:
-    "Engineer building systems across Rust, TypeScript, Solana, trading infrastructure, creative coding, and automation.",
+    "Creative frontend engineer at the intersection of brutalist design, generative physics, and scalable architecture.",
   dossierHref: "/bhanu-dossier.pdf",
+  email: "bhanu9112002@gmail.com",
   socials: [
-    { label: "github.com/codeptor", href: "https://github.com/codeptor" },
-    { label: "x.com/codeptor", href: "https://x.com/codeptor" },
+    { label: "github.com/codeptor", href: "https://github.com/codeptor", primary: true },
+    { label: "x.com/esotericfrr", href: "https://x.com/esotericfrr", primary: true },
+    { label: "linkedin.com/in/bhanu911", href: "https://www.linkedin.com/in/bhanu911", primary: true },
+    { label: "instagram.com/esot3rikunt", href: "https://instagram.com/esot3rikunt" },
+    { label: "letterboxd/esoterikunt", href: "https://letterboxd.com/esoterikunt/" },
+    { label: "last.fm/esoterikunt", href: "https://www.last.fm/user/esoterikunt" },
+    { label: "spotify.bhanueso.dev", href: "https://spotify.bhanueso.dev" },
   ],
 };
 
 export const history = [
-  { role: "SYSTEMS ENGINEER", org: "@codeptor", year: "2026" },
-  { role: "SOLANA / RUST BUILDER", org: "native programs + infra", year: "2025" },
-  { role: "FULL STACK OPERATOR", org: "Next.js, FastAPI, Postgres", year: "2024" },
-  { role: "CREATIVE TOOLMAKER", org: "shaders, CLIs, automation", year: "2023" },
+  {
+    role: "INDEPENDENT ENGINEER",
+    org: "client work — landing pages, scraping pipelines, web apps",
+    year: "2026",
+  },
+  {
+    role: "SOFTWARE ENGINEER",
+    org: "Neolytics — RAG analytics, FastAPI, Redis caching",
+    year: "2025",
+  },
+  {
+    role: "RESEARCH INTERN",
+    org: "SRMIST — genomic ETL pipelines, LoRA fine-tuning",
+    year: "2024",
+  },
+  {
+    role: "APPLICATION DEVELOPER",
+    org: "CamaSleep — edge ML on Jetson, TensorRT",
+    year: "2024",
+  },
 ];
 
 export const assets = [
   {
-    name: "MAUSAM TUI",
-    description: "Terminal weather interface tuned for fast daily checks.",
-    href: "/artifacts/mausam-tui",
+    name: "ASTROLABE",
+    description: "Pioneer-plaque-style pulsar map generator from any star.",
+    href: "https://astrolabe.bhanueso.dev",
+  },
+  {
+    name: "KHARCHA",
+    description: "Public AI usage dashboard for Claude Code, Codex, OpenCode, Kimi.",
+    href: "https://kharcha.bhanueso.dev",
   },
   {
     name: "DITHERED",
-    description: "Visual experiments around ASCII, dithering, and shader pipelines.",
-    href: "/artifacts/dithered",
-  },
-  {
-    name: "POLYMARKET TOOLS",
-    description: "Prediction-market research and execution utilities.",
-    href: "/artifacts/polymarket-tools",
+    description: "Creative studio for ASCII, dithering, and shader pipelines.",
+    href: "https://dithered.bhanueso.dev",
   },
 ];
 
-export const capabilities = [
-  ["RUST", "LVL_5"],
+export const capabilities: [string, string][] = [
   ["TYPESCRIPT", "LVL_5"],
-  ["SOLANA", "LVL_4"],
-  ["PYTHON", "LVL_4"],
-  ["INFRA", "LVL_4"],
+  ["NEXT.JS", "LVL_5"],
+  ["DESIGN", "LVL_5"],
+  ["MOTION", "LVL_4"],
   ["SHADERS", "LVL_4"],
+  ["THREE.JS", "LVL_4"],
+  ["TAILWIND", "LVL_4"],
+  ["PYTHON", "LVL_4"],
 ];
 
-export const thoughts = [
-  {
-    title: "Building Fast Without Losing Taste",
-    date: "April 29, 2026",
-    summary: "Notes on shipping useful tools while keeping the interface sharp.",
-    href: "/thoughts/building-fast",
-    tag: "Process",
-  },
-  {
-    title: "Why I Prefer Small Revertible Commits",
-    date: "April 12, 2026",
-    summary: "A working style for keeping momentum without hiding risk.",
-    href: "/thoughts/small-commits",
-    tag: "Engineering",
-  },
-  {
-    title: "Rust For Trading Infrastructure",
-    date: "March 21, 2026",
-    summary: "Latency, safety, and operational clarity in live systems.",
-    href: "/thoughts/rust-trading",
-    tag: "Systems",
-  },
-  {
-    title: "Designing CLIs That Do Not Waste Time",
-    date: "February 16, 2026",
-    summary: "Print-and-exit tools, clean ANSI, useful failures, no ceremony.",
-    href: "/thoughts/cli-design",
-    tag: "Tools",
-  },
-  {
-    title: "Native Solana Programs, No Scaffolding Theater",
-    date: "January 30, 2026",
-    summary: "Manual instruction parsing, signer checks, and compact account state.",
-    href: "/thoughts/native-solana",
-    tag: "Solana",
-  },
-  {
-    title: "Creative Coding As Interface Research",
-    date: "January 8, 2026",
-    summary: "Shaders, ASCII renderers, and tactile feedback loops.",
-    href: "/thoughts/creative-coding",
-    tag: "Graphics",
-  },
-  {
-    title: "Backtesting Without Lying To Yourself",
-    date: "December 18, 2025",
-    summary: "Costs, regimes, drawdowns, and robustness checks before trust.",
-    href: "/thoughts/backtesting-honestly",
-    tag: "Trading",
-  },
-  {
-    title: "A Small Note On WSL2 As A Workstation",
-    date: "November 24, 2025",
-    summary: "Arch, WezTerm, nvim, and keeping Windows out of the critical path.",
-    href: "/thoughts/wsl-workstation",
-    tag: "Setup",
-  },
-  {
-    title: "BPF Stack Limits Change How You Think",
-    date: "October 5, 2025",
-    summary: "Writing Solana code with fixed buffers, zero-copy state, and fewer surprises.",
-    href: "/thoughts/bpf-stack-limits",
-    tag: "Solana",
-  },
-  {
-    title: "Why Good Automation Still Needs Taste",
-    date: "August 14, 2025",
-    summary: "Agents, browser control, and the difference between output and useful output.",
-    href: "/thoughts/automation-taste",
-    tag: "Agents",
-  },
-  {
-    title: "Notes From A Shader Debugging Session",
-    date: "June 2, 2025",
-    summary: "Texture pipelines, post effects, and reading pixels when the canvas lies.",
-    href: "/thoughts/shader-debugging",
-    tag: "Graphics",
-  },
-];
+// Field-log entries live as MDX in src/content/thoughts/*.mdx.
+// Loaded via getCollection("thoughts") wherever needed (ThoughtsSheet,
+// rss.xml, the manifest stat tile).
 
 export const artifacts = [
   {
-    name: "SNIPE",
+    name: "SIGNUM",
     year: "2026",
-    description: "Market monitoring and execution workspace.",
-    href: "/artifacts/snipe",
+    description: "Personal sigil and motion identity experiments.",
+    href: "https://github.com/Codeptor/signum",
+  },
+  {
+    name: "ASTROLABE",
+    year: "2026",
+    description: "Pioneer-plaque-style pulsar map generator — pick any star in the galaxy and get a triangulation map.",
+    href: "https://astrolabe.bhanueso.dev",
+  },
+  {
+    name: "KHARCHA",
+    year: "2026",
+    description: "Public AI usage dashboard aggregating Claude Code, Codex, OpenCode, and Kimi.",
+    href: "https://kharcha.bhanueso.dev",
+  },
+  {
+    name: "DITHERED",
+    year: "2026",
+    description: "Photo and video studio for ASCII, dithered visuals, and shader effects with PNG / MP4 / GIF export.",
+    href: "https://dithered.bhanueso.dev",
+  },
+  {
+    name: "GLYPH",
+    year: "2026",
+    description: "WebGL and canvas experiments for character-based rendering.",
+    href: "https://glyph.bhanueso.dev",
   },
   {
     name: "MAUSAM",
     year: "2026",
-    description: "Weather surfaces across web and terminal workflows.",
-    href: "/artifacts/mausam",
-  },
-  {
-    name: "ASCII STUDIO",
-    year: "2025",
-    description: "WebGL and canvas experiments for character-based rendering.",
-    href: "/artifacts/ascii-studio",
-  },
-  {
-    name: "KHARCHA",
-    year: "2025",
-    description: "Personal finance tracking experiments.",
-    href: "/artifacts/kharcha",
-  },
-  {
-    name: "MAP TO POSTER",
-    year: "2024",
-    description: "Geographic poster generation pipeline.",
-    href: "/artifacts/maptoposter",
-  },
-  {
-    name: "CAMOFOX BROWSER",
-    year: "2024",
-    description: "Automation wrapper around anti-detect browser sessions.",
-    href: "/artifacts/camofox-browser",
+    description: "Beautiful weather in your terminal — Rust CLI tuned for fast daily checks.",
+    href: "https://github.com/codeptor/mausam",
   },
   {
     name: "WEZTERM PRESENCE",
-    year: "2023",
-    description: "Small terminal presence utility.",
-    href: "/artifacts/wezterm-presence",
+    year: "2026",
+    description: "Discord Rich Presence for WezTerm — shows what you are doing in your terminal on your profile.",
+    href: "https://github.com/Codeptor/wezterm-presence",
+  },
+  {
+    name: "HYDROGEN",
+    year: "2026",
+    description: "Showcase site for the design language — the ruleset that emerged from astrolabe and kharcha.",
+    href: "https://github.com/codeptor/hydrogen",
   },
 ];
+
+// Stats are computed at render-time in ManifestSheet.astro since the THOUGHTS
+// count comes from the content collection (only readable from .astro files).
+
+// Filled at build time by scripts/fetch-activity.ts → src/data/activity.json.
+// Falls back to zeros if the fetch fails or hasn't run yet.
+export { default as activity } from "./activity.json";
