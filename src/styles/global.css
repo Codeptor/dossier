@@ -177,22 +177,15 @@ a {
 
 .stack-wrap {
   position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
   width: min(100%, 576px);
-  min-height: 100vh;
-  padding-bottom: 46px;
   margin: 0 auto;
   isolation: isolate;
 }
 
 .sheet {
-  position: absolute;
-  inset: 0 auto auto 0;
   width: 100%;
   max-width: 100%;
   min-width: 0;
-  min-height: 100vh;
   overflow: hidden;
   color: var(--paper-ink);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
@@ -210,8 +203,6 @@ a {
 .sheet.active {
   position: relative;
   z-index: 3;
-  width: 100%;
-  justify-self: stretch;
   opacity: 1;
   filter: none;
   cursor: grab;
@@ -227,26 +218,32 @@ a {
   transition: none;
 }
 
-.sheet.left {
-  top: 48px;
-  z-index: 1;
+.sheet.left,
+.sheet.right {
+  position: fixed;
+  top: 96px;
+  left: 50%;
+  width: min(calc(100vw - 32px), 576px);
   opacity: 0.92;
-  transform: translate(-55.286px, 16.7369px) rotate(-4.89055deg) scale(0.98);
+  pointer-events: auto;
+}
+
+.sheet.left {
+  z-index: 1;
+  transform: translateX(-50%) translate(-55.286px, 16.7369px) rotate(-4.89055deg) scale(0.98);
 }
 
 .sheet.right {
-  top: 48px;
   z-index: 2;
-  opacity: 0.92;
-  transform: translate(38.7471px, 9.71402px) rotate(3.14135deg) scale(0.99);
+  transform: translateX(-50%) translate(38.7471px, 9.71402px) rotate(3.14135deg) scale(0.99);
 }
 
 .sheet.left:hover {
-  transform: translate(-63px, 12px) rotate(-5.4deg) scale(0.982);
+  transform: translateX(-50%) translate(-63px, 12px) rotate(-5.4deg) scale(0.982);
 }
 
 .sheet.right:hover {
-  transform: translate(48px, 6px) rotate(3.6deg) scale(0.992);
+  transform: translateX(-50%) translate(48px, 6px) rotate(3.6deg) scale(0.992);
 }
 
 @keyframes sheet-enter {
@@ -962,19 +959,19 @@ a {
   }
 
   .sheet.left {
-    transform: translate(-32px, 48px) rotate(-4deg) scale(0.96);
+    transform: translateX(-50%) translate(-32px, 48px) rotate(-4deg) scale(0.96);
   }
 
   .sheet.right {
-    transform: translate(32px, 36px) rotate(3deg) scale(0.97);
+    transform: translateX(-50%) translate(32px, 36px) rotate(3deg) scale(0.97);
   }
 
   .sheet.left:hover {
-    transform: translate(-32px, 48px) rotate(-4deg) scale(0.96);
+    transform: translateX(-50%) translate(-32px, 48px) rotate(-4deg) scale(0.96);
   }
 
   .sheet.right:hover {
-    transform: translate(32px, 36px) rotate(3deg) scale(0.97);
+    transform: translateX(-50%) translate(32px, 36px) rotate(3deg) scale(0.97);
   }
 
   .manifest-sheet,
