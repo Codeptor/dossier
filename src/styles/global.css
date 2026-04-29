@@ -251,18 +251,18 @@ body::before {
 }
 
 @media (max-width: 760px) {
+  /* No sheet animation on mobile — page change is an instant swap so
+     the user can scroll the new sheet immediately. */
+  ::view-transition-group(sheet-manifest),
+  ::view-transition-group(sheet-thoughts),
+  ::view-transition-group(sheet-archive),
   ::view-transition-old(sheet-manifest),
   ::view-transition-old(sheet-thoughts),
-  ::view-transition-old(sheet-archive) {
-    animation-name: sheet-slide-out;
-    animation-duration: 320ms;
-  }
-
+  ::view-transition-old(sheet-archive),
   ::view-transition-new(sheet-manifest),
   ::view-transition-new(sheet-thoughts),
   ::view-transition-new(sheet-archive) {
-    animation-name: sheet-slide-in;
-    animation-duration: 320ms;
+    animation: none !important;
   }
 }
 
@@ -643,6 +643,10 @@ a {
   display: block;
   width: 100%;
   height: 100%;
+  /* Color-negative the procedural ASCII shader on desktop — bright bg,
+     dark glyphs. Mobile keeps the original orientation via the override
+     in the (max-width: 760px) block. */
+  filter: invert(1);
 }
 
 .dither-panel .dp-overlay {
@@ -2630,57 +2634,45 @@ a {
   }
 
   .sheet {
-    min-height: 720px;
+    min-height: auto;
   }
 
-  /* Mobile: photo-deck stack. All three sheets occupy the same slot;
-     inactive ones peek out from behind the active one with progressive
-     y-offset + scale. Swiping the top sheet off horizontally is handled
-     by the view-transition slide keyframes below (sheet-slide-out/in),
-     while the GROUP interpolation lifts the next card forward. */
+  /* Mobile: only the active sheet renders. The dossier-stack metaphor
+     doesn't translate to a phone, so inactive sheets are pulled out of
+     layout entirely — leaves vertical scroll uncluttered, horizontal swipe
+     handled by the pointer-drag in DossierStack. */
   .stack-wrap {
     position: relative;
-    width: min(100%, 430px);
-    /* The wrapper still needs height since absolute children don't contribute */
-    min-height: 720px;
+    width: 100%;
+    min-height: auto;
   }
 
   .sheet.left,
   .sheet.right {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    width: 100%;
-    pointer-events: none;
+    display: none;
   }
 
-  .sheet.left {
-    z-index: 1;
-    transform: translateY(18px) scale(0.92);
-    opacity: 0.55;
-  }
-
-  .sheet.right {
-    z-index: 2;
-    transform: translateY(9px) scale(0.96);
-    opacity: 0.78;
-  }
-
-  /* No hover-state difference on touch devices */
-  .sheet.left:hover,
-  .sheet.right:hover {
-    transform: translateY(18px) scale(0.92);
-  }
-
-  .sheet.right:hover {
-    transform: translateY(9px) scale(0.96);
+  /* Allow native vertical scroll inside the active sheet while the JS
+     pointer handler still receives horizontal drags for the swipe. */
+  .sheet.active {
+    touch-action: pan-y;
+    cursor: auto;
   }
 
   /* Red margin rule sits at 50px from the left, which collides with the
      text on narrow viewports. Hide it on mobile. */
   .red-rule {
     display: none;
+  }
+
+  /* Center the DitherPanel inside its (now single-column) manifest-head cell.
+     Also keep the original (non-inverted) colors on mobile. */
+  .dither-panel {
+    justify-self: center;
+  }
+
+  .dither-panel canvas {
+    filter: none;
   }
 
   .manifest-sheet,

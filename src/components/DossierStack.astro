@@ -124,25 +124,45 @@ const stateFor = (sheet: Sheet): SheetState => {
     let dragging = false;
     let pointerId = 0;
 
+    let lockedHorizontal = false;
+
     active.addEventListener("pointerdown", (event) => {
       const target = event.target as HTMLElement;
       if (target.closest("a, button")) return;
-      event.preventDefault();
+      // Don't preventDefault here — that blocks native vertical scroll on
+      // touch. We let touch-action: pan-y on the sheet handle scroll
+      // disambiguation; once we detect a horizontal-dominant gesture in
+      // pointermove we lock the drag and capture the pointer.
       pointerId = event.pointerId;
       startX = event.clientX;
       startY = event.clientY;
       dragging = true;
-      active.classList.add("dragging");
-      try {
-        active.setPointerCapture(pointerId);
-      } catch (_) {}
+      lockedHorizontal = false;
     });
 
     active.addEventListener("pointermove", (event) => {
       if (!dragging || event.pointerId !== pointerId) return;
       const dx = event.clientX - startX;
       const dy = event.clientY - startY;
-      if (Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+
+      if (!lockedHorizontal) {
+        // Decide direction at first significant motion. Vertical wins on
+        // ties to favour scroll; horizontal locks in the drag.
+        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+        if (Math.abs(dy) > Math.abs(dx)) {
+          // Vertical scroll — release the gesture entirely.
+          dragging = false;
+          return;
+        }
+        lockedHorizontal = true;
+        active.classList.add("dragging");
+        try {
+          active.setPointerCapture(pointerId);
+        } catch (_) {}
+      }
+
+      // Horizontal-locked: prevent any residual scroll, track drag.
+      event.preventDefault();
       active.style.setProperty("--drag-x", `${dx}px`);
     });
 
@@ -150,7 +170,10 @@ const stateFor = (sheet: Sheet): SheetState => {
       if (!dragging || event.pointerId !== pointerId) return;
       const dx = event.clientX - startX;
       dragging = false;
+      const wasHorizontal = lockedHorizontal;
+      lockedHorizontal = false;
       active.classList.remove("dragging");
+      if (!wasHorizontal) return;
 
       const index = routes.indexOf(activeRoute);
       const passed = Math.abs(dx) > 120;
