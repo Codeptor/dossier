@@ -2816,14 +2816,13 @@ a {
     font-size: 13px;
   }
 
-  /* Iframe artifacts — fall back to fluid <=520px so the desktop 1280px
-     scale-to-fit doesn't render too small to read */
-  .art-astrolabe .a-frame[data-scaled="1"] iframe,
-  .art-kharcha .k-frame[data-scaled="1"] iframe {
-    position: static;
-    width: 100% !important;
-    height: 100% !important;
-    transform: none !important;
+  /* Iframe artifacts (astrolabe / kharcha live embeds) don't read well on
+     phones — they'd render at 1280px and require a horizontal scroll to
+     interact, which fights the page scroll. Drop them entirely on mobile;
+     the parent post-artifact aside goes with them so the layout stays clean. */
+  .post-artifact:has(.art-astrolabe),
+  .post-artifact:has(.art-kharcha) {
+    display: none;
   }
 
   /* COMM_CHANNELS — collapse to single-column on mobile */
