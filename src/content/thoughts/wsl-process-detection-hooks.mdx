@@ -1,0 +1,39 @@
+---
+title: "WSL Process Detection via zsh preexec Hooks"
+date: 2026-02-15
+summary: "wslhost.exe blocks PID inspection from Windows. Workaround: zsh preexec emits OSC 1337 user-vars, WezTerm Lua writes JSON, Rust daemon updates Discord."
+tag: Setup
+artifact: wezterm-presence
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="wezterm-presence" />
+
+I wanted Discord Rich Presence on WezTerm — show what command I'm running, which directory I'm in, how many tabs are open. Easy enough on native Windows or Linux. From WSL2, the foreground process API returns `wslhost.exe` for every pane, because that's what Windows actually sees.
+
+The chain that worked is four hops, and once it's set up it never blinks:
+
+```
+zsh hook → WezTerm user-var → Lua writes JSON → Rust daemon → Discord IPC
+```
+
+**zsh hook.** A `preexec` function fires before each command runs. It strips the binary name out of the about-to-execute command, base64-encodes it, and emits an OSC 1337 escape sequence:
+
+```sh
+preexec() {
+  local cmd="${1%% *}"
+  local b64=$(printf '%s' "$cmd" | base64 -w0)
+  printf '\033]1337;SetUserVar=WEZTERM_PROG=%s\007' "$b64"
+}
+```
+
+WezTerm receives the escape, decodes the base64, stores it as the pane's `WEZTERM_PROG` user variable.
+
+**WezTerm Lua.** On every status update tick, the Lua config reads `pane:get_user_vars()` and falls back to `pane:get_foreground_process_name()` if the user var isn't set (works fine on native panes). Then it writes `process / cwd / tab_count / pane_count` as JSON to a file under `%LOCALAPPDATA%`.
+
+**Rust daemon.** A native Windows binary, cross-compiled from WSL via `cargo build --target x86_64-pc-windows-gnu --release`. Watches the JSON file with `notify`, debounces, and pushes to Discord via the IPC pipe at `\\.\pipe\discord-ipc-0`. Only updates when state actually changes — no flickering. Auto-launches when WezTerm starts via a `tasklist` check in the Lua config.
+
+**Discord side.** Rich Presence assets uploaded once: `wezterm`, `claude`, `neovim`, `vim`, `rust`, `terminal`, `python`, `nodejs`, `git`, `docker`, `ssh`. Daemon picks the icon by matching the process name; falls back to `terminal` if nothing matches.
+
+The reason I'm including this is the technique generalizes. Whenever a sandbox or compatibility layer (WSL, containers, remote shells) hides the real process from the host, you can leak the information out the side via terminal escape sequences. OSC 1337 is the carrier; user variables are the schema.

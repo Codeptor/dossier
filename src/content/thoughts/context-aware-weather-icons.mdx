@@ -1,0 +1,35 @@
+---
+title: "Context-Aware Icon Colors for Terminal Weather"
+date: 2026-03-10
+summary: "Day/night/rain/snow state machine driving ANSI colors on Nerd Font glyphs — using actual sunrise/sunset, not hardcoded hours."
+tag: Tools
+artifact: mausam
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="mausam" />
+
+Mausam is a terminal weather tool — Rust, crossterm, tokio. The icon palette is small but the rule that drives it is the part I'm proud of.
+
+Every status icon has a *contextual* color, not a fixed one. The sun is yellow at noon, dimmed at dusk, swapped for a moon at night. Rain icons are blue when cold, slate when warm. Wind glyphs use a steel-gray that doesn't fight with the temperature gradient.
+
+The state machine reads sunrise/sunset *from the API response* rather than using hardcoded hours. `is_daytime_now(daily, &localtime)` consults the actual local sunrise time, so winter mornings render the moon icon at 7am and summer evenings render the sun until well past 8pm. No magic numbers.
+
+```rust
+let (icon, desc, icon_color) =
+    weather_icon(cur.weather_code, is_daytime_now(daily, &loc.localtime));
+
+let wind_val = format!(
+    "{} {:.0} {} {}",
+    ICON_WIND.truecolor(150, 180, 210),
+    cur.wind_speed_10m, wind_label(),
+    wind_compass(cur.wind_direction_10m),
+);
+```
+
+Truecolor is non-negotiable. The 16-color ANSI palette can't render a sunset gradient; the temperature display needs a smooth ramp from teal-cool to amber-warm and that doesn't fit in 16 slots. `colored::truecolor(r, g, b)` falls back gracefully on terminals that don't support it, but every modern terminal in 2026 does.
+
+Icon set is Nerd Font. `\u{e30f}` for sun, `\u{f04b6}` for moon, full set for wind compass, AQI leaf, gauge for pressure, eye for visibility, dewpoint indicator. The compact display computes a per-column padding width by stripping ANSI from each value before measuring — otherwise the box-drawing borders drift on color codes.
+
+The whole render is two phases: pre-compute every string and its visual width, then derive the panel width from `max(content widths) + gap`. Nothing reflows after layout. Single render, single line of output.

@@ -1,0 +1,40 @@
+---
+title: "Normalizing Model IDs Across Four AI Providers"
+date: 2026-04-08
+summary: "Claude Code, Codex, OpenCode, Kimi all spell the same model differently. One alias map collapses them."
+tag: Engineering
+artifact: kharcha
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="kharcha" />
+
+Kharcha aggregates AI-coding-tool usage from four sources — Claude Code's JSONL files, Codex's SQLite + JSONL, OpenCode's local store, and a Kimi exporter. All of them log "the same model" with different identifiers.
+
+GitHub Copilot calls it `github-copilot:claude-opus-4.6`. Vercel calls it `vercel/anthropic/claude-opus-4-6`. OpenCode might pass `opencode:claude-3-5-sonnet`. Anthropic's API itself uses `claude-opus-4-6`. If you don't normalize at ingest, your dashboard double-counts the same model under three different labels.
+
+The normalizer is twenty lines:
+
+```ts
+const WRAPPED_CLAUDE_PROVIDERS = new Set(["github-copilot", "vercel", "opencode"]);
+
+export function normalizeModelKey(provider: string, model: string): NormalizedModelKey {
+  if (WRAPPED_CLAUDE_PROVIDERS.has(provider)) {
+    const wrappedModel = model.includes("/") ? model.split("/").pop() ?? model : model;
+    if (wrappedModel.startsWith("claude-")) {
+      return {
+        provider: "anthropic",
+        model: wrappedModel.replace(/\.6$/u, "-6"),
+      };
+    }
+  }
+  return { provider, model };
+}
+```
+
+Two rules. If the provider is a known Claude wrapper, strip the path prefix and re-attribute to `anthropic`. Replace the trailing `.6` (Anthropic's older shorthand) with `-6` (their canonical form). Everything else passes through.
+
+This sits at the front of the sync pipeline, so every row entering the database is already canonicalized. Pricing snapshots are keyed off the normalized identifier, which means the same model gets the same cost lookup regardless of which CLI logged it.
+
+It's a tiny module — `packages/usage-core/src/model-aliases.ts` — but it's the difference between a dashboard that shows "Claude Opus 4.6" once and one that shows it three times under different vendor names.

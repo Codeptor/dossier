@@ -1,18 +1,52 @@
 ---
-import DossierStack from "@/components/DossierStack.astro";
-import { thoughts } from "@/data/profile";
+import { getCollection, render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
 
-export function getStaticPaths() {
-  return thoughts.map((entry) => ({
-    params: { slug: entry.href.split("/").pop() },
+export async function getStaticPaths() {
+  const entries = await getCollection("thoughts");
+  return entries.map((entry) => ({
+    params: { slug: entry.id },
     props: { entry },
   }));
 }
 
 const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const dateLabel = entry.data.date.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
 ---
 
-<BaseLayout title={`${entry.title} // codeptor`}>
-  <DossierStack active="thoughts" />
+<BaseLayout title={`${entry.data.title} // ${profile.handle}`} description={entry.data.summary}>
+  <Nav active="thoughts" />
+  <main class="reading-shell">
+    <article class="reading-sheet">
+      <header class="reading-head">
+        <a href="/thoughts" class="reading-back">← Field Log</a>
+        <h1>{entry.data.title}</h1>
+        <div class="reading-meta">
+          <time>{dateLabel}</time>
+          <span>·</span>
+          <em>{entry.data.tag}</em>
+        </div>
+        <p class="reading-summary">{entry.data.summary}</p>
+      </header>
+
+      <section class="reading-body">
+        <Content />
+      </section>
+
+      <footer class="reading-foot">
+        <a href="/thoughts" class="reading-back">← Field Log</a>
+        <Barcode />
+        <p>{profile.name.toUpperCase()} // {profile.year}</p>
+      </footer>
+    </article>
+  </main>
 </BaseLayout>

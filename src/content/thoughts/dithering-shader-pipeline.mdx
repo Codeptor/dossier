@@ -1,0 +1,33 @@
+---
+title: "Fourteen Dithering Modes in One WebGL2 Pipeline"
+date: 2026-03-20
+summary: "Floyd-Steinberg, Atkinson, Bayer, blue noise — plus ASCII, Braille, halftone renderers, all running real-time."
+tag: Graphics
+artifact: dithered
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="dithered" />
+
+Dithered started as a single Floyd-Steinberg pass on a `<canvas>` and grew into a creative studio with fourteen dithering algorithms, nine art-style renderers, and eight post-FX effects, all running real-time at 60fps on uploaded images, 30s 1080p video, or a webcam feed.
+
+The architecture rule that kept it sane: the engine is a pure-logic module with zero React dependencies.
+
+```
+apps/web/engine/
+├── color/      # sRGB linearization, BT.709 luminance, OKLAB
+├── dithering/  # 14 algorithms
+├── art-styles/ # ASCII, Halftone, Braille, DotCross, Line, …
+├── postfx/     # CRT, Bloom, Chromatic Aberration, Vignette, Glitch
+├── renderer/   # WebGL2 pipeline, font atlas, adaptive quality
+└── source/     # Image, video, webcam
+```
+
+Two splits matter. **Dithering happens in linear color space**, not sRGB. If you don't linearize before quantizing, error diffusion smears toward gamma's mid-tones and the result looks dirty. BT.709 luminance for the threshold check, OKLAB for palette quantization in the duotone modes.
+
+**Art styles are renderers, not filters**. Floyd-Steinberg outputs a quantized bitmap. ASCII, Braille, halftone — those *render* that bitmap into characters or shapes. Treating them as separate stages means I can stack: blue-noise dither → braille render → CRT post-FX, and the chain composes. Eight post-FX effects (CRT barrel + phosphor mask + scanlines, bloom, chromatic aberration, vignette, film grain, glitch, scanlines, interlace) become a chained shader pipeline at the end.
+
+Char rendering uses a font atlas baked once at app start — variable charsets (Standard, Blocks, Braille, Katakana, Rune, Greek, math symbols, box drawing — 40+) all sample from the same texture.
+
+Export pipeline catches the same render path: PNG, JPEG, MP4/WebM at 20Mbps with resolution-scaled bitrate, client-side GIF, and a self-contained Vanilla JS or React TSX component that includes the engine code. The standalone background package (`@workspace/ascii-bg`) is the engine + a thin wrapper, zero shadcn/Tailwind deps so it drops into any React app.

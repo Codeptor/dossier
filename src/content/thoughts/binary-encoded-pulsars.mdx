@@ -1,0 +1,39 @@
+---
+title: "Encoding Pulsar Periods as Binary Ticks"
+date: 2026-04-12
+summary: "Period divided by hydrogen's 21cm spin-flip frequency, integer to binary, binary to tick marks."
+tag: Graphics
+artifact: astrolabe
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="astrolabe" />
+
+The Pioneer plaque encodes each pulsar's period as a string of binary tick marks. The unit isn't seconds — it's the inverse of the 21cm hydrogen line's spin-flip frequency, `1 / 1,420,405,751.768 Hz ≈ 7.04024 × 10⁻¹⁰ seconds`. A reference any radio-capable civilization should agree on.
+
+The conversion is twelve lines:
+
+```ts
+const H_FREQ = 1_420_405_751.768;
+const H_PERIOD = 1 / H_FREQ;
+
+export function periodToBinary(periodSeconds: number): bigint {
+  return BigInt(Math.round(periodSeconds / H_PERIOD));
+}
+
+export function binaryToTicks(value: bigint): (0 | 1)[] {
+  const bits: (0 | 1)[] = [];
+  while (value > 0n) {
+    bits.unshift((value & 1n) === 1n ? 1 : 0);
+    value >>= 1n;
+  }
+  return bits;
+}
+```
+
+A pulsar with period 0.388s becomes ~5.5 × 10⁸ hydrogen units, which is around 30 bits. That's 30 ticks etched along the line from the observer to the pulsar — long mark for `1`, short for `0`, just like the plate.
+
+`bigint` matters. Period × 1.42 GHz overflows a regular 64-bit float past a few hundred milliseconds — you start losing precision exactly where the slower pulsars live. JavaScript's number type silently rounds; `bigint` does not.
+
+The encoding is universally decodable in the sense Sagan intended. It's also small enough to fit in a `.ts` module and render via SVG with no client-side JS. That's the whole renderer in `astrolabe/src/lib/binary-encoding.ts`.

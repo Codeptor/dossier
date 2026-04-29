@@ -1,0 +1,35 @@
+---
+title: "Idempotent Usage Sync via SHA256 Dedupe Keys"
+date: 2026-03-24
+summary: "Hashing source:session:provider:model:day into a primary key means re-running the sync is a no-op."
+tag: Engineering
+artifact: kharcha
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="kharcha" />
+
+Kharcha's local sync script reads usage data from your machine and POSTs batches to a remote endpoint. The script gets re-run constantly — on a cron, after a long Claude session, when I'm curious about today's spend. Without deduplication, every run would double-count.
+
+The fix is a stable primary key. For every usage row, hash a tuple of fields that uniquely identifies *that observation*, then put the hash in the column you'd normally use for an autoincrement id.
+
+```ts
+dedupeKey: varchar("dedupe_key", { length: 64 }).primaryKey(),
+// SHA256(source:session:provider:model:day)
+```
+
+The five fields:
+- **source** — `claude-code` / `codex` / `opencode` / `kimi`
+- **session** — the upstream session id (Claude's `.jsonl` filename, Codex's session UUID, etc.)
+- **provider** — normalized via the model-aliases module (so `github-copilot` collapses to `anthropic` for wrapped Claude calls)
+- **model** — also normalized
+- **day** — `YYYY-MM-DD`, so multiple runs in the same day are one row, not many
+
+A `INSERT ... ON CONFLICT DO UPDATE` upsert lets the second sync of the day overwrite the first with refreshed token counts and costs, but the row count stays stable. Drizzle's `onConflictDoUpdate` makes it one query.
+
+Pricing is frozen at ingest time in a separate `pricing_snapshots` table keyed by `(provider, model, snapshot_day)`. So the cost on a row reflects what the model cost when you used it, not what it costs today. Anthropic dropping prices later doesn't retroactively rewrite my history.
+
+Daily rollups (`day × provider × model`) are recomputed only for the days touched by the current sync, so the rebuild is bounded regardless of how much history exists.
+
+The whole sync is idempotent end-to-end. Re-run it as many times as you want.

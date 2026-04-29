@@ -1,0 +1,38 @@
+---
+title: "Splitting Audio Off Tokio in a Rust Music Player"
+date: 2026-03-04
+summary: "Async LibraryManager handles I/O; a dedicated mpsc thread handles playback so Tokio's scheduler jitter never reaches the audio pipeline."
+tag: Systems
+artifact: entropy
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="entropy" />
+
+Entropy is a native music player I'm building in Rust on Slint. Tokio for everything async (library scans, metadata fetches, artwork caching, search), but the moment audio buffers get involved, Tokio is the wrong tool.
+
+A scheduler that's optimized for fairness and `await`-point yielding will introduce sub-millisecond pauses that are inaudible in a web request and catastrophic in an audio buffer fill. The fix is to keep audio on its own dedicated OS thread with a `std::sync::mpsc` channel for command intake.
+
+The module split:
+
+```
+src/playback/
+├── backend/      # rodio + symphonia decoders
+├── crossfade/    # equal-power and linear crossfade implementations
+├── eq/           # parametric EQ
+├── gapless/      # gapless transitions (next-track preload)
+├── replay_gain/  # track + album RG application
+├── commands.rs   # PlaybackCommand, QueueCommand enums
+├── engine.rs     # PlaybackEngine — owns the audio thread
+├── queue.rs      # QueueManager — async, lives in tokio land
+└── state.rs      # PlaybackEvent, PlaybackState — sent back to UI
+```
+
+`PlaybackEngine` spawns once with `std::thread::spawn`, sets thread priority where the OS allows, and then does nothing but read commands off `mpsc::Receiver<PlaybackCommand>`. The async side calls `engine.send(PlaybackCommand::Play(track_id))` and gets back `PlaybackEvent`s through a separate channel for UI updates.
+
+This separation also makes the gapless transition reliable. Decoding the next track 200ms before the current one ends needs to happen on the audio thread without contention — if it lands in a Tokio task, you can't guarantee the decode completes before the buffer underruns. Pre-loading on the dedicated thread, with the queue manager handing it the next `TrackId` over a separate channel, the transition is sample-accurate.
+
+Crossfade is equal-power by default (`sin²(t·π/2) / cos²(t·π/2)`), with a linear option for short fades. ReplayGain lookups happen async on the queue side; the dB value hitches a ride on the `Play` command to the audio thread, which applies it via a single `f32` multiplier on the post-EQ stage.
+
+Everything the audio thread does is bounded latency. Everything else is async. Don't blur that line.

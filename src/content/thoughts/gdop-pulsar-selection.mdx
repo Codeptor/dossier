@@ -1,0 +1,30 @@
+---
+title: "GDOP Triangulation Across the ATNF Catalogue"
+date: 2026-04-24
+summary: "Picking 14 pulsars from 3924 candidates via greedy geometric optimization — five strategies tested, GDOP wins on positional spread."
+tag: Engineering
+artifact: astrolabe
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="astrolabe" />
+
+Astrolabe lets you pick any star in the galaxy and renders a Pioneer-plaque-style triangulation map *from that star's perspective*. The plaque needs 14 pulsars. There are 3,924 in the catalogue. Which 14?
+
+I tried five selection strategies: `fastest` (shortest period), `closest`, `longest` (longest period), `stable` (oldest characteristic age), and `gdop` — geometric dilution of precision.
+
+GDOP is the right answer, and the math is small. For each candidate set, I compute the unit direction vector from observer to each pulsar, build the design matrix `H` (Nx3 of those vectors), then `Q = (HᵀH)⁻¹`. PDOP is `sqrt(trace(Q))`. Lower is better — a low PDOP means the pulsars span the sky enough that an error in any one direction doesn't blow out the whole solution.
+
+```ts
+// Diagonal of (HᵀH)⁻¹ via cofactors — only need three values for PDOP
+const det = a*(e*k - f*h) - b*(d*k - f*g) + c*(d*h - e*g);
+const trace = (e*k-f*h)*invDet + (a*k-c*g)*invDet + (a*e-b*d)*invDet;
+return Math.sqrt(trace);
+```
+
+Selection is greedy: start with the highest-scoring single pulsar, then add the candidate that minimizes the new set's PDOP, repeat to 14. Score factors in characteristic age (`τ = P / 2|Ṗ|`), period uniqueness (penalize near-duplicates in log-space), and the geometric improvement.
+
+`fastest` gives you a clump of millisecond pulsars in the galactic plane — terrible for triangulation. `gdop` gives you a sphere of well-spaced beacons. The plaque output looks like Pioneer's *because* the geometry is good, not because the pulsars are familiar.
+
+Source: `astrolabe/src/lib/pulsar-selection.ts`. Verified against ATNF v2.7.0.

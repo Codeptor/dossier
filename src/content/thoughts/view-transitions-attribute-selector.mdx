@@ -1,0 +1,38 @@
+---
+title: "View Transitions Ignore Attribute Selectors on the Host"
+date: 2026-04-28
+summary: "html[data-X] ::view-transition-group(name) silently fails to match. The fix: inject a literal style tag at runtime."
+tag: Engineering
+artifact: dossier
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="dossier" />
+
+Building this site, I needed the clicked side-sheet to render *on top* of the other morphing sheets during a route swap, otherwise it visually retreats behind them before arriving at the front.
+
+Plan A was clean: tag the destination on `<html>` before navigation, target the corresponding `::view-transition-group` with a CSS attribute selector.
+
+```css
+html[data-target-sheet="thoughts"] ::view-transition-group(sheet-thoughts) {
+  z-index: 100;
+}
+```
+
+It silently doesn't match. I confirmed by reading the pseudo-element computed style at runtime — `getComputedStyle(document.documentElement, '::view-transition-group(sheet-thoughts)').zIndex` was still `1`, the base value, even with the attribute set on `<html>` and the rule in scope.
+
+The descendant combinator from the host doesn't propagate into the view-transition pseudo-tree. The pseudo-element ignores attribute filters from its source ancestor.
+
+Plan B that worked: a managed `<style id="sheet-target-style">` tag I rewrite imperatively before each navigation, with the rule baked literal — no host filter, no attribute selector.
+
+```js
+const setTargetSheet = (sheetId) => {
+  const tag = document.getElementById("sheet-target-style");
+  tag.textContent = `::view-transition-group(${sheetId}) { z-index: 100 !important; }`;
+};
+```
+
+Astro's `ClientRouter` swaps `<head>` mid-transition, so the tag has to be re-injected at `astro:before-swap` (reads `event.newDocument` for the incoming sheet) and `astro:after-swap` (re-applies after the head replacement). With those three hook points covered, the destination group sits above the others for the full 460ms of the morph and the click stops looking like a layered card-shuffle.
+
+If you're targeting view-transition pseudo-elements conditionally, write the rule directly. Don't lean on the cascade.
