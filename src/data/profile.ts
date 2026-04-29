@@ -136,6 +136,18 @@ export const artifacts = [
     description: "Showcase site for the design language — the ruleset that emerged from astrolabe and kharcha.",
     href: "https://github.com/codeptor/hydrogen",
   },
+  {
+    name: "ASCII-DITHER-SHADER",
+    year: "2026",
+    description: "Agent skill for ASCII / dithering / shader rendering — 14 algorithms, 40+ charsets, GLSL/WGSL/WebGPU, CRT and glitch FX.",
+    href: "https://github.com/codeptor/ascii-dither-shader",
+  },
+  {
+    name: "ASCII-SHADER-TSX",
+    year: "2026",
+    description: "Agent skill that emits animated ASCII and shader-like effects as React/TSX components — works in Claude Code, Cursor, Windsurf, Gemini CLI.",
+    href: "https://github.com/codeptor/ascii-shader-tsx",
+  },
 ];
 
 // Stats are computed at render-time in ManifestSheet.astro since the THOUGHTS
