@@ -5,12 +5,26 @@
   "type": "module",
   "scripts": {
     "dev": "astro dev --host 0.0.0.0",
+    "fetch:activity": "tsx scripts/fetch-activity.ts",
+    "prebuild": "pnpm run fetch:activity",
     "build": "astro check && astro build",
     "preview": "astro preview --host 0.0.0.0"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.4",
+    "@astrojs/mdx": "^5.0.4",
+    "@astrojs/react": "^5.0.4",
+    "@astrojs/vercel": "^9.0.5",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vercel/og": "^0.11.1",
     "astro": "^5.15.6",
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5",
     "typescript": "^5.9.3"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "tsx": "^4.21.0"
   }
 }
