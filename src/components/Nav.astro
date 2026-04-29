@@ -16,15 +16,6 @@ const nav = [
 <aside class="top-nav">
   <nav aria-label="Primary">
     <a class="brand" href="/" aria-label={`${profile.handle} home`}>
-      <svg class="brand-mark" viewBox="0 0 13 13" aria-hidden="true">
-        <g fill="currentColor">
-          <rect x="6" y="0" width="1" height="3" />
-          <rect x="6" y="10" width="1" height="3" />
-          <rect x="0" y="6" width="3" height="1" />
-          <rect x="10" y="6" width="3" height="1" />
-          <rect x="5" y="5" width="3" height="3" />
-        </g>
-      </svg>
       <strong>{profile.handle}</strong>
     </a>
     <div class="nav-links">
@@ -178,7 +169,13 @@ const nav = [
     }
     if (routeMap[k]) {
       event.preventDefault();
-      goTo(routeMap[k]);
+      const cur = currentRoute();
+      const target = routeMap[k];
+      if (target !== cur) {
+        const dir = routes.indexOf(target) > routes.indexOf(cur) ? 1 : -1;
+        document.documentElement.style.setProperty("--swap-dir", String(dir));
+      }
+      goTo(target);
       return;
     }
     if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
@@ -186,6 +183,7 @@ const nav = [
       const idx = routes.indexOf(currentRoute());
       const next = (idx + dir + routes.length) % routes.length;
       event.preventDefault();
+      document.documentElement.style.setProperty("--swap-dir", String(dir));
       goTo(routes[next]);
     }
   });

@@ -87,6 +87,14 @@ const stateFor = (sheet: Sheet): SheetState => {
   const go = (route: string) => {
     if (route === currentRoute()) return;
     setTargetSheet(sheetForRoute[route]);
+    // Set --swap-dir for the mobile slide animation; harmless on desktop where
+    // a different keyframe set is in play.
+    const cur = routes.indexOf(currentRoute());
+    const target = routes.indexOf(route);
+    if (cur !== -1 && target !== -1) {
+      const dir = target > cur ? 1 : -1;
+      document.documentElement.style.setProperty("--swap-dir", String(dir));
+    }
     const link = document.querySelector<HTMLAnchorElement>(`a[href="${route}"]`);
     if (link) {
       link.click();
@@ -155,6 +163,7 @@ const stateFor = (sheet: Sheet): SheetState => {
         const nextRoute = routes[nextIndex];
         // keep --drag-x set so the view-transition captures the
         // dragged-off transform as the FROM state
+        document.documentElement.style.setProperty("--swap-dir", String(direction));
         swapSound();
         go(nextRoute);
       } else {
