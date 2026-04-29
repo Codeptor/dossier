@@ -1,4 +1,4 @@
-// Fetches the last 12 months of GitHub commit activity for the user
+// Fetches the last 6 months of GitHub commit activity for the user
 // and writes the bucketed counts to src/data/activity.json.
 //
 // Run via `pnpm run prebuild` (and locally any time you want to refresh).
@@ -8,6 +8,7 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 
 const USER = "codeptor";
+const MONTHS = 6;
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const OUT = resolve(ROOT, "..", "src", "data", "activity.json");
 
@@ -16,7 +17,7 @@ const month = (d: Date) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).
 const monthKeys = (): string[] => {
   const now = new Date();
   const keys: string[] = [];
-  for (let i = 11; i >= 0; i--) {
+  for (let i = MONTHS - 1; i >= 0; i--) {
     const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
     keys.push(month(d));
   }
@@ -33,7 +34,7 @@ interface SearchResponse {
 
 const fetchSearchPage = async (page: number): Promise<CommitItem[]> => {
   const since = new Date();
-  since.setUTCMonth(since.getUTCMonth() - 12);
+  since.setUTCMonth(since.getUTCMonth() - MONTHS);
   const q = encodeURIComponent(`author:${USER} author-date:>=${since.toISOString().slice(0, 10)}`);
   const url = `https://api.github.com/search/commits?q=${q}&sort=author-date&order=desc&per_page=100&page=${page}`;
   const headers: Record<string, string> = {
