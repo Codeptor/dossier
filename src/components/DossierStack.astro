@@ -36,13 +36,14 @@ const stateFor = (sheet: Sheet): SheetState => {
 
 <footer class="site-foot">
   <span>© {profile.year}</span>
-  <nav aria-label="Social links">
+  <nav aria-label="Feed">
     <a href="/rss.xml">rss feed</a>
-    {profile.socials.map((item) => <a href={item.href}>{item.label}</a>)}
   </nav>
 </footer>
 
 <script>
+  import { swap as swapSound } from "@/lib/audio";
+
   const routes = ["/", "/thoughts", "/artifacts"];
   const sheetForRoute: Record<string, string> = {
     "/": "manifest",
@@ -154,6 +155,7 @@ const stateFor = (sheet: Sheet): SheetState => {
         const nextRoute = routes[nextIndex];
         // keep --drag-x set so the view-transition captures the
         // dragged-off transform as the FROM state
+        swapSound();
         go(nextRoute);
       } else {
         // under threshold — CSS transition smoothly snaps back to 0

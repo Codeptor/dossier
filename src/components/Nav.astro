@@ -43,6 +43,9 @@ const nav = [
     <button class="theme-toggle" type="button" aria-label="Cycle theme" data-theme-toggle>
       <span class="theme-tag">[ <em data-theme-name>DARK</em> ]</span>
     </button>
+    <button class="audio-toggle" type="button" aria-label="Toggle sound" data-audio-toggle aria-pressed="false" data-muted="0">
+      <span class="theme-tag">[ <em data-audio-label>MUTE</em> ]</span>
+    </button>
   </nav>
 </aside>
 
@@ -59,6 +62,8 @@ const nav = [
 </nav>
 
 <script>
+  import { initAudio, isMuted, toggleMute, swap as swapSound, click as clickSound } from "@/lib/audio";
+
   const THEMES = ["dark", "blueprint", "plaque", "light"] as const;
   type Theme = (typeof THEMES)[number];
   const KEY = "codeptor-theme";
@@ -79,6 +84,20 @@ const nav = [
   })();
   apply(initial);
 
+  initAudio();
+
+  const reflectMute = () => {
+    const m = isMuted();
+    document.querySelectorAll<HTMLButtonElement>("[data-audio-toggle]").forEach((btn) => {
+      btn.setAttribute("aria-pressed", m ? "true" : "false");
+      btn.dataset.muted = m ? "1" : "0";
+    });
+    document.querySelectorAll<HTMLElement>("[data-audio-label]").forEach((el) => {
+      el.textContent = m ? "UNMUTE" : "MUTE";
+    });
+  };
+  reflectMute();
+
   const bind = () => {
     document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]").forEach((btn) => {
       if (btn.dataset.bound) return;
@@ -93,6 +112,36 @@ const nav = [
         } catch {}
       });
     });
+
+    document.querySelectorAll<HTMLButtonElement>("[data-audio-toggle]").forEach((btn) => {
+      if (btn.dataset.bound) return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        toggleMute();
+        reflectMute();
+      });
+    });
+
+    // Delegated click sounds: real clicks on inactive sheets → swap;
+    // any actionable <a>/<button> → click. Synthetic clicks dispatched
+    // programmatically (e.g. DossierStack's link.click() relay) are ignored
+    // via event.isTrusted so we don't double-trigger.
+    if (!document.body.dataset.audioBound) {
+      document.body.dataset.audioBound = "1";
+      document.body.addEventListener("click", (event) => {
+        if (!event.isTrusted) return;
+        const target = event.target as HTMLElement | null;
+        if (!target) return;
+
+        const sheet = target.closest<HTMLElement>("[data-sheet][data-route]");
+        if (sheet && !sheet.classList.contains("active")) {
+          swapSound();
+          return;
+        }
+
+        if (target.closest("a, button")) clickSound();
+      });
+    }
   };
   bind();
   document.addEventListener("astro:page-load", bind);
@@ -124,7 +173,6 @@ const nav = [
     if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
     const k = event.key.toLowerCase();
     if (k === "t") {
-      // Theme cycle on lowercase t
       document.querySelector<HTMLButtonElement>("[data-theme-toggle]")?.click();
       return;
     }
