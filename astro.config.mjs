@@ -2,6 +2,7 @@ import { defineConfig } from "astro/config";
 import vercel from "@astrojs/vercel";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
+import sitemap from "@astrojs/sitemap";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
@@ -21,7 +22,9 @@ export default defineConfig({
   output: "static",
   site: "https://bhanueso.dev",
   adapter: vercel(),
-  integrations: [mdx(), react()],
+  integrations: [mdx(), react(), sitemap({
+    filter: (page) => !page.includes("/og.png") && !page.includes("/api/"),
+  })],
   devToolbar: { enabled: false },
   // Disable Shiki — it emits inline `style="background-color: ..."` that
   // overrides our themed --code-bg. Plain mono code blocks look right on
