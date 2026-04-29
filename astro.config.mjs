@@ -3,6 +3,8 @@ import vercel from "@astrojs/vercel";
 import mdx from "@astrojs/mdx";
 import react from "@astrojs/react";
 import sitemap from "@astrojs/sitemap";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import { fileURLToPath } from "node:url";
 import { execFileSync } from "node:child_process";
 
@@ -31,6 +33,17 @@ export default defineConfig({
   // every theme and match the dossier aesthetic.
   markdown: {
     syntaxHighlight: false,
+    rehypePlugins: [
+      rehypeSlug,
+      [
+        rehypeAutolinkHeadings,
+        {
+          behavior: "append",
+          properties: { className: ["heading-anchor"], "aria-label": "Permalink" },
+          content: { type: "text", value: "#" },
+        },
+      ],
+    ],
   },
   vite: {
     define: {
