@@ -643,10 +643,6 @@ a {
   display: block;
   width: 100%;
   height: 100%;
-  /* Color-negative the procedural ASCII shader on desktop — bright bg,
-     dark glyphs. Mobile keeps the original orientation via the override
-     in the (max-width: 760px) block. */
-  filter: invert(1);
 }
 
 .dither-panel .dp-overlay {
@@ -2669,10 +2665,6 @@ a {
      Also keep the original (non-inverted) colors on mobile. */
   .dither-panel {
     justify-self: center;
-  }
-
-  .dither-panel canvas {
-    filter: none;
   }
 
   .manifest-sheet,
