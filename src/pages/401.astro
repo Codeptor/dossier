@@ -4,12 +4,12 @@ import Nav from "@/components/Nav.astro";
 import ErrorFrame from "@/components/ErrorFrame.astro";
 ---
 
-<BaseLayout title="404 // Bhanu" description="Path not found in registry.">
+<BaseLayout title="401 // Bhanu" description="Authentication required.">
   <Nav active="home" />
   <ErrorFrame
-    code="404"
-    headline="AUTHORIZATION_DENIED"
-    hint="RETURN_TO_MANIFEST"
-    detail="Path not found in registry // CHECKSUM_FAIL"
+    code="401"
+    headline="CREDENTIALS_REQUIRED"
+    hint="VERIFY_TOKEN"
+    detail="No active session // BADGE_NOT_PRESENTED"
   />
 </BaseLayout>

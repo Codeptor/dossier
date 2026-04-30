@@ -1,0 +1,13 @@
+/* TEAM */
+Designer / Engineer: Bhanu
+Handle: bhanueso
+Site: https://bhanueso.dev
+Email: bhanu9112002@gmail.com
+GitHub: @codeptor
+Location: Gurugram, IN
+
+/* SITE */
+Stack: Astro 5, MDX, Vercel Edge, View Transitions
+Fonts: Nippo, Departure Mono, Tronica Mono
+Source: https://github.com/Codeptor/dossier
+Last update: 2026.04

@@ -1,0 +1,4 @@
+Contact: mailto:bhanu9112002@gmail.com
+Expires: 2027-04-30T00:00:00Z
+Preferred-Languages: en
+Canonical: https://bhanueso.dev/.well-known/security.txt

@@ -1,0 +1,158 @@
+---
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+interface Props {
+  code: string;
+  headline: string;
+  hint: string;
+  detail: string;
+}
+
+const { code, headline, hint, detail } = Astro.props;
+---
+
+<main class="not-found">
+  <div class="nf-frame">
+    <header class="nf-head">
+      <span>SPEC_ARCHIVE</span>
+      <h1>{headline}</h1>
+      <p>{detail}</p>
+      <small>VOL. 2026.01</small>
+    </header>
+    <section class="nf-body">
+      <div class="nf-row"><span>STATUS</span><strong>{code}</strong></div>
+      <div class="nf-row"><span>QUERY</span><strong id="nf-path">/</strong></div>
+      <div class="nf-row"><span>ORIGIN</span><strong>{profile.handle}</strong></div>
+      <div class="nf-row"><span>HINT</span><strong>{hint}</strong></div>
+    </section>
+    <section class="nf-actions">
+      <a href="/" class="nf-link">Go to Manifest →</a>
+      <a href="/thoughts" class="nf-link">Field Log →</a>
+      <a href="/artifacts" class="nf-link">Archive →</a>
+    </section>
+    <footer class="nf-foot">
+      <Barcode />
+      <p>*** NO_FURTHER_DATA ***</p>
+    </footer>
+  </div>
+</main>
+
+<script is:inline>
+  const el = document.getElementById("nf-path");
+  if (el) el.textContent = location.pathname || "/";
+</script>
+
+<style is:global>
+  .not-found {
+    min-height: 100vh;
+    padding: 96px 16px 64px;
+    display: grid;
+    place-items: start center;
+  }
+  .nf-frame {
+    width: min(100%, 576px);
+    padding: 36px 36px 32px;
+    border: 2px solid rgba(229, 251, 255, 0.5);
+    background: linear-gradient(180deg, rgba(10, 79, 182, 0.85), rgba(10, 79, 182, 0.7));
+    color: var(--blue-ink);
+    font-family: var(--mono);
+  }
+  .nf-head {
+    position: relative;
+    padding-bottom: 18px;
+    border-bottom: 2px solid currentColor;
+  }
+  .nf-head > span {
+    position: absolute;
+    top: -36px;
+    right: -36px;
+    padding: 5px 9px;
+    color: var(--blue);
+    background: var(--blue-ink);
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .nf-head h1 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 28px;
+    letter-spacing: -0.04em;
+    text-transform: uppercase;
+  }
+  .nf-head p {
+    margin: 8px 0 0;
+    color: rgba(229, 251, 255, 0.55);
+    font-size: 9px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+  .nf-head small {
+    position: absolute;
+    right: 0;
+    bottom: 22px;
+    font-size: 8px;
+    color: rgba(229, 251, 255, 0.42);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .nf-body {
+    margin-top: 20px;
+    display: grid;
+    gap: 8px;
+  }
+  .nf-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid rgba(229, 251, 255, 0.18);
+    font-size: 11px;
+  }
+  .nf-row span {
+    color: rgba(229, 251, 255, 0.55);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .nf-row strong {
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .nf-actions {
+    display: grid;
+    gap: 8px;
+    margin-top: 22px;
+  }
+  .nf-link {
+    display: block;
+    padding: 12px 14px;
+    border: 1px solid rgba(229, 251, 255, 0.25);
+    color: var(--blue-ink);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background 160ms ease, transform 160ms ease, border-color 160ms ease;
+  }
+  .nf-link:hover {
+    border-color: rgba(229, 251, 255, 0.5);
+    background: rgba(255, 255, 255, 0.04);
+    transform: translateX(2px);
+  }
+  .nf-foot {
+    display: grid;
+    gap: 14px;
+    margin-top: 28px;
+    text-align: center;
+  }
+  .nf-foot p {
+    margin: 0;
+    color: rgba(229, 251, 255, 0.45);
+    font-size: 10px;
+    letter-spacing: 0.6em;
+  }
+</style>
