@@ -1,11 +1,11 @@
 {
-  "sha": "5294a5a",
+  "sha": "bada4a7",
   "branch": "master",
-  "builtAt": "2026-04-30T11:12:43.987Z",
-  "builtAtHuman": "Thu, 30 Apr 2026 11:12:43 GMT",
+  "builtAt": "2026-04-30T11:58:00.058Z",
+  "builtAtHuman": "Thu, 30 Apr 2026 11:58:00 GMT",
   "lastCommit": {
-    "sha": "3109fc6",
-    "message": "fix: hide dither panel on mobile, restore single-column manifest head",
-    "date": "2026-04-30T01:42:56.000+05:30"
+    "sha": "9def0fd",
+    "message": "feat: webmention + giscus markup, build-meta badges in colophon, apple-touch-ico",
+    "date": "2026-04-30T16:43:03.000+05:30"
   }
 }

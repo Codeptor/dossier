@@ -1,0 +1,43 @@
+---
+// Letterboxd-style 5-star rating, in 0.5 increments. Renders inline SVGs so
+// half-stars don't fall back to the muddy `½` glyph and themes auto-color.
+interface Props {
+  rating: number; // 0..5, supports halves
+  outOf?: number;
+}
+const { rating, outOf = 5 } = Astro.props;
+const clamped = Math.max(0, Math.min(outOf, rating ?? 0));
+const full = Math.floor(clamped);
+const hasHalf = clamped - full >= 0.5;
+const fullCount = full;
+const halfCount = hasHalf ? 1 : 0;
+const emptyCount = outOf - fullCount - halfCount;
+---
+
+<span class="stars" aria-label={`${clamped} out of ${outOf} stars`}>
+  {Array.from({ length: fullCount }).map(() => (
+    <svg class="star star-full" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.5l2.94 6.86 7.41.59-5.65 4.86 1.74 7.23L12 18.27l-6.44 3.77 1.74-7.23-5.65-4.86 7.41-.59L12 2.5z" />
+    </svg>
+  ))}
+  {halfCount === 1 && (
+    <svg class="star star-half" viewBox="0 0 24 24" aria-hidden="true">
+      <defs>
+        <clipPath id="star-half-clip"><rect x="0" y="0" width="12" height="24" /></clipPath>
+      </defs>
+      <path
+        d="M12 2.5l2.94 6.86 7.41.59-5.65 4.86 1.74 7.23L12 18.27l-6.44 3.77 1.74-7.23-5.65-4.86 7.41-.59L12 2.5z"
+        class="star-half-empty"
+      />
+      <path
+        d="M12 2.5l2.94 6.86 7.41.59-5.65 4.86 1.74 7.23L12 18.27l-6.44 3.77 1.74-7.23-5.65-4.86 7.41-.59L12 2.5z"
+        clip-path="url(#star-half-clip)"
+      />
+    </svg>
+  )}
+  {Array.from({ length: emptyCount }).map(() => (
+    <svg class="star star-empty" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M12 2.5l2.94 6.86 7.41.59-5.65 4.86 1.74 7.23L12 18.27l-6.44 3.77 1.74-7.23-5.65-4.86 7.41-.59L12 2.5z" />
+    </svg>
+  ))}
+</span>

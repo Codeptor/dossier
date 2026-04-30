@@ -4,6 +4,7 @@ import Nav from "@/components/Nav.astro";
 import Barcode from "@/components/Barcode.astro";
 import { profile } from "@/data/profile";
 import films from "@/data/letterboxd.json";
+import Stars from "@/components/Stars.astro";
 
 interface Film {
   title: string;
@@ -15,13 +16,6 @@ interface Film {
 }
 
 const recent: Film[] = films as Film[];
-
-const renderRating = (r: number | null): string => {
-  if (r === null) return "·";
-  const full = Math.floor(r);
-  const half = r - full >= 0.5 ? "½" : "";
-  return "★".repeat(full) + half;
-};
 
 const formatDate = (iso: string): string => {
   if (!iso) return "";
@@ -69,7 +63,9 @@ const updatedAt = "LIVE FROM LETTERBOXD";
                   </strong>
                   <em>{formatDate(f.watchedDate)}</em>
                 </a>
-                <span class="watchlist-rating">{renderRating(f.rating)}</span>
+                <span class="watchlist-rating">
+                  {f.rating !== null ? <Stars rating={f.rating} /> : "·"}
+                </span>
               </li>
             ))}
           </ol>

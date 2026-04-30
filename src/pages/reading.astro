@@ -4,6 +4,7 @@ import Nav from "@/components/Nav.astro";
 import Barcode from "@/components/Barcode.astro";
 import { profile } from "@/data/profile";
 import { books } from "@/data/reading";
+import Stars from "@/components/Stars.astro";
 
 const current = books.filter((b) => b.status === "current");
 const recent = books.filter((b) => b.status === "recent");
@@ -28,15 +29,18 @@ const updatedAt = "APR 30 2026";
             <h2>Current</h2>
             <ul>
               {current.map((b) => (
-                <li>
-                  <span>{b.author}</span>
-                  <strong>
+                <li class="book-row">
+                  <span class="book-meta">
+                    <span class="book-author">{b.author}</span>
+                    {b.year ? <span class="book-year">{b.year}</span> : null}
+                  </span>
+                  <strong class="book-title">
                     {b.link ? (
                       <a href={b.link} target="_blank" rel="noreferrer noopener" class="book-link">{b.title}</a>
                     ) : (
                       b.title
                     )}
-                    {b.note ? <em class="book-note"> — {b.note}</em> : null}
+                    {b.note ? <span class="book-note">{b.note}</span> : null}
                   </strong>
                 </li>
               ))}
@@ -49,15 +53,19 @@ const updatedAt = "APR 30 2026";
             <h2>Recently Finished</h2>
             <ul>
               {recent.map((b) => (
-                <li>
-                  <span>{b.author}</span>
-                  <strong>
+                <li class="book-row">
+                  <span class="book-meta">
+                    <span class="book-author">{b.author}</span>
+                    {b.year ? <span class="book-year">{b.year}</span> : null}
+                  </span>
+                  <strong class="book-title">
                     {b.link ? (
                       <a href={b.link} target="_blank" rel="noreferrer noopener" class="book-link">{b.title}</a>
                     ) : (
                       b.title
                     )}
-                    {b.rating ? <em class="book-rating"> · {"★".repeat(Math.floor(b.rating))}{b.rating - Math.floor(b.rating) >= 0.5 ? "½" : ""}</em> : null}
+                    {b.note ? <span class="book-note">{b.note}</span> : null}
+                    {b.rating ? <span class="book-rating"><Stars rating={b.rating} /></span> : null}
                   </strong>
                 </li>
               ))}
@@ -82,6 +90,39 @@ const updatedAt = "APR 30 2026";
 </BaseLayout>
 
 <style>
+  /* Override the default `.now-body li` 110px+1fr grid for reading rows so
+     the author/year stack on the left and the title block stacks on the
+     right, both top-aligned. */
+  .book-row {
+    display: grid !important;
+    grid-template-columns: 200px 1fr;
+    align-items: start !important;
+    padding: 12px 14px !important;
+    gap: 18px !important;
+  }
+  .book-meta {
+    display: grid;
+    gap: 3px;
+    line-height: 1.3;
+  }
+  .book-author {
+    color: var(--field-ink);
+    letter-spacing: 0.02em !important;
+    text-transform: none !important;
+    font-size: 12px;
+  }
+  .book-year {
+    color: color-mix(in srgb, var(--field-ink) 50%, transparent);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+  }
+  .book-title {
+    display: grid;
+    gap: 4px;
+    line-height: 1.3;
+  }
   .book-link {
     color: var(--field-ink);
     text-decoration: underline;
@@ -91,11 +132,18 @@ const updatedAt = "APR 30 2026";
     font-style: normal;
     color: color-mix(in srgb, var(--field-ink) 60%, transparent);
     font-size: 11px;
+    font-weight: 400;
   }
   .book-rating {
-    font-style: normal;
-    color: color-mix(in srgb, var(--field-ink) 70%, transparent);
+    color: color-mix(in srgb, var(--field-ink) 80%, transparent);
     font-size: 11px;
     letter-spacing: 0.04em;
+  }
+
+  @media (max-width: 540px) {
+    .book-row {
+      grid-template-columns: 1fr !important;
+      gap: 6px !important;
+    }
   }
 </style>
