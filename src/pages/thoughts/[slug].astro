@@ -239,10 +239,8 @@ const articleLd = {
       window.addEventListener("scroll", check, { passive: true });
     };
 
-    // Giscus comments — loads only on thought entries. Update the `repo`,
-    // `repoId`, `category`, and `categoryId` after enabling GitHub
-    // Discussions on the dossier repo and installing the Giscus app:
-    // https://giscus.app
+    // Giscus — GitHub Discussions on Codeptor/dossier (General category).
+    // Visitors sign in with their GitHub account and reactions are enabled.
     const wireGiscus = () => {
       const mount = document.querySelector<HTMLElement>("[data-giscus]");
       if (!mount || mount.dataset.bound) return;
@@ -252,9 +250,9 @@ const articleLd = {
       s.crossOrigin = "anonymous";
       s.async = true;
       s.setAttribute("data-repo", "Codeptor/dossier");
-      s.setAttribute("data-repo-id", "REPLACE_ME");
-      s.setAttribute("data-category", "Thoughts");
-      s.setAttribute("data-category-id", "REPLACE_ME");
+      s.setAttribute("data-repo-id", "R_kgDOSQJY_w");
+      s.setAttribute("data-category", "General");
+      s.setAttribute("data-category-id", "DIC_kwDOSQJY_84C8DJl");
       s.setAttribute("data-mapping", "pathname");
       s.setAttribute("data-strict", "1");
       s.setAttribute("data-reactions-enabled", "1");
