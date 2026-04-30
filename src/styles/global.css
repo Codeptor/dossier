@@ -3263,3 +3263,74 @@ a {
 
 /* hide entries that don't match the active search query */
 .entry-list a.hidden-search { display: none; }
+
+/* ──── print stylesheet ──── */
+@media print {
+  /* Hide chrome — nav, mobile nav, toggles, modal, RAF artwork. */
+  .top-nav,
+  .mobile-nav,
+  .site-foot,
+  .reading-progress,
+  .reading-toc,
+  .reading-pager,
+  .shortcut-modal,
+  .dither-panel,
+  .post-artifact,
+  .audio-toggle,
+  .theme-toggle,
+  [data-dp-canvas],
+  [data-d-canvas] {
+    display: none !important;
+  }
+
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  .reading-shell {
+    padding: 0 !important;
+  }
+
+  .reading-sheet {
+    box-shadow: none !important;
+    border: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+  }
+
+  .reading-head h1 {
+    color: #000 !important;
+    font-size: 28px;
+  }
+
+  .reading-body {
+    color: #000 !important;
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+
+  .reading-body pre {
+    background: #f4f4f4 !important;
+    color: #000 !important;
+    border-left: 2px solid #999 !important;
+    page-break-inside: avoid;
+  }
+
+  .reading-body a {
+    color: #000 !important;
+    text-decoration: underline !important;
+  }
+
+  .reading-body a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    opacity: 0.7;
+  }
+
+  .reading-foot {
+    border-top: 1px solid #999 !important;
+    margin-top: 32px;
+  }
+}
