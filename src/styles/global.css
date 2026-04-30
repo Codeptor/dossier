@@ -2972,6 +2972,14 @@ a {
     right: 0;
   }
 
+  /* The UPDATED stamp lives absolute bottom-right on desktop — on mobile it
+     overlaps the description paragraph. Drop it back into normal flow. */
+  .now-head small {
+    position: static;
+    display: block;
+    margin-top: 8px;
+  }
+
   /* Error frames — same badge clip risk as .now-head; pin to corner.
      Bottom padding bumped so the action links don't slide under mobile-nav. */
   .not-found {
