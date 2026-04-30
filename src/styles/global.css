@@ -1003,7 +1003,9 @@ a {
 
 .manifest-quicklinks {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  /* 100px minimum so 3 columns fit from ~340px content widths
+     (sheet 320 - padding 26*2 = 268 / 3 = 89px → 3 cols at 376px+). */
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
   gap: 6px;
   margin: 10px 18px 0 0;
 }
@@ -1368,6 +1370,13 @@ a {
   opacity: 1;
 }
 
+/* Touch devices: no persistent :hover, keep the copy button visible. */
+@media (hover: none) {
+  .reading-body pre .copy-btn {
+    opacity: 1;
+  }
+}
+
 .reading-body pre .copy-btn:hover {
   color: var(--code-ink);
   border-color: var(--code-ink);
@@ -1395,6 +1404,13 @@ a {
 
 .reading-body .heading-anchor:hover {
   color: var(--field-ink);
+}
+
+/* Touch devices have no persistent :hover — keep anchors visible always. */
+@media (hover: none) {
+  .reading-body .heading-anchor {
+    opacity: 0.55;
+  }
 }
 
 .reading-body pre code,
@@ -2951,8 +2967,77 @@ a {
   }
 
   .now-head > span {
-    top: -28px;
-    right: -22px;
+    top: -22px;
+    right: 0;
+  }
+
+  /* Error frames — same badge clip risk as .now-head; pin to corner.
+     Bottom padding bumped so the action links don't slide under mobile-nav. */
+  .not-found {
+    padding-bottom: 120px;
+  }
+
+  .nf-frame {
+    overflow: hidden;
+  }
+
+  .nf-head > span {
+    top: -22px;
+    right: 0;
+  }
+
+  /* Field stats / archive stats — 3-col grids that overflow with long
+     values on narrow viewports. Drop to 2-col at the 760 breakpoint, the
+     legible single-row at smaller. */
+  .field-stats,
+  .archive-stat-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .field-stat,
+  .archive-stat {
+    padding: 8px 10px;
+  }
+
+  .field-stat strong,
+  .archive-stat strong {
+    font-size: 14px;
+  }
+
+  /* Commit ticker — narrow grid hides the repo column on mobile, message
+     no longer truncated. */
+  .commit-ticker li {
+    grid-template-columns: 60px 1fr;
+    gap: 8px;
+  }
+
+  .commit-ticker li strong {
+    display: none;
+  }
+
+  .commit-msg {
+    white-space: normal;
+    line-height: 1.4;
+  }
+
+  /* Archive footer — drop the 44px gap when columns stack to 1fr. */
+  .archive-foot {
+    gap: 20px;
+  }
+
+  /* Reading body meta line — flex-wrap so date · tag · time · updated
+     stack cleanly instead of overflowing. */
+  .reading-meta {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+}
+
+/* Drop to single-column for stats grids on truly narrow screens. */
+@media (max-width: 420px) {
+  .field-stats,
+  .archive-stat-row {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -3218,7 +3303,9 @@ a {
 }
 .reading-toc a:hover { text-decoration: underline; }
 
-@media (max-width: 1100px) {
+@media (max-width: 1300px) {
+  /* Below 1300px the reading-sheet (max 880px) + 24px shell padding × 2
+     leaves no room for a 200px sidebar without overlap. Hide it. */
   .reading-toc { display: none; }
 }
 
@@ -3360,6 +3447,20 @@ a {
   overflow-y: auto;
   padding: 10px 12px;
   border-bottom: 1px dashed color-mix(in srgb, var(--manifest-ink) 14%, transparent);
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--manifest-ink) 35%, transparent) transparent;
+}
+.cli-output::-webkit-scrollbar {
+  width: 6px;
+}
+.cli-output::-webkit-scrollbar-track {
+  background: transparent;
+}
+.cli-output::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--manifest-ink) 25%, transparent);
+}
+.cli-output::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--manifest-ink) 50%, transparent);
 }
 .cli-line {
   white-space: pre-wrap;
@@ -3415,4 +3516,24 @@ a {
 }
 .reading-comments-hint a {
   color: var(--field-ink);
+}
+
+/* ──── inline 5-star rating glyphs (Stars.astro) ──── */
+.stars {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  vertical-align: middle;
+}
+.star {
+  width: 1em;
+  height: 1em;
+  display: block;
+  fill: currentColor;
+}
+.star-empty {
+  opacity: 0.22;
+}
+.star-half-empty {
+  opacity: 0.22;
 }
