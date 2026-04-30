@@ -6,53 +6,61 @@ import { profile } from "@/data/profile";
 
 const groups = [
   {
-    heading: "01 // Hardware",
+    heading: "01 // Gear",
     rows: [
-      { label: "OS", value: "Arch Linux on WSL2" },
-      { label: "Editor", value: "Neovim + LazyVim" },
-      { label: "Terminal", value: "WezTerm" },
-      { label: "Font", value: "JetBrainsMono Nerd Font" },
-      { label: "Shell", value: "zsh" },
+      { label: "Laptop", value: "ASUS ROG Zephyrus G15 — 15.6\" QHD 165Hz" },
+      { label: "Display A", value: "25\" 2K (1440p) 165Hz" },
+      { label: "Display B", value: "16\" 1080p 240Hz" },
+      { label: "Mouse", value: "Razer Viper V3 Pro — Focus Pro 35K, 8000Hz, ~54g, USB-C wireless" },
+      { label: "Keyboard", value: "Razer Huntsman Mini — Mercury White, 60% layout, optical switches" },
+      { label: "Headphones", value: "Sony WH-1000XM5 — 30hr ANC, dual-driver, V1 processor" },
     ],
   },
   {
-    heading: "02 // Toolchains",
+    heading: "02 // Workstation",
     rows: [
-      { label: "JS pkg", value: "pnpm (bun for select repos)" },
-      { label: "Python", value: "uv" },
-      { label: "Rust", value: "rustup, cargo, cargo-watch" },
-      { label: "Solana", value: "cargo build-sbf" },
-      { label: "Flutter", value: "fvm + Dart MCP server" },
-      { label: "DB", value: "Postgres, SQLite, Redis" },
+      { label: "OS", value: "Arch Linux on WSL2 (host: Windows)" },
+      { label: "Editor", value: "Neovim" },
+      { label: "Terminal", value: "WezTerm (default domain: WSL:archlinux)" },
+      { label: "Theme", value: "Midnight Sakura (custom WezTerm palette)" },
+      { label: "Font", value: "MonaspiceNe Nerd Font · 11.5pt · 1.15 line-height" },
+      { label: "Shell", value: "zsh + Oh My Zsh + Powerlevel10k" },
+      { label: "Cursor", value: "BlinkingBar" },
+      { label: "Browsers", value: "Zen (Firefox/Gecko, Arc-style) + Helium (Chromium, telemetry-stripped)" },
+      { label: "Music", value: "Spotify + Nicotine+ (Soulseek P2P)" },
     ],
   },
   {
-    heading: "03 // Daily CLIs",
+    heading: "03 // Software",
     rows: [
-      { label: "Git", value: "lazygit, gh, fzf" },
-      { label: "Search", value: "ripgrep, fd, zoxide" },
-      { label: "Files", value: "eza, bat, jq, btop" },
-      { label: "AI", value: "claude-code, opencode, gemini-cli" },
+      { label: "Files", value: "eza, bat, fd, jq, btop" },
+      { label: "Search", value: "ripgrep, fzf (Tokyonight palette), zoxide" },
+      { label: "Git", value: "lazygit, gh (linuxbrew)" },
+      { label: "Pkg (Arch)", value: "pacman + yay" },
+      { label: "Brew", value: "Linuxbrew for one-offs" },
+      { label: "JS pkg", value: "pnpm and bun" },
+      { label: "Python", value: "uv (always, never venv/pip)" },
+      { label: "Containers", value: "Docker + docker-compose" },
     ],
   },
   {
-    heading: "04 // Web Stack",
+    heading: "04 // AI / Agents",
     rows: [
-      { label: "Frameworks", value: "Astro 5, Next.js (App Router), Vite" },
-      { label: "Style", value: "Tailwind v4, shadcn/ui" },
-      { label: "Auth", value: "better-auth" },
-      { label: "ORM", value: "Prisma, Drizzle" },
-      { label: "Data", value: "TanStack Query, tRPC" },
-      { label: "Anim", value: "Motion, GSAP, Lenis" },
+      { label: "Coding", value: "claude-code (--effort max), opencode, codex (--yolo shortcut)" },
+      { label: "Local LLMs", value: "llama.cpp + Qwen 2.5 / 3.5 (q4_k_m)" },
+      { label: "Scraping", value: "Camoufox + camofox-browser REST" },
+      { label: "Skills (mine)", value: "ascii-dither-shader, ascii-shader-tsx" },
     ],
   },
   {
-    heading: "05 // Hosting",
+    heading: "05 // Configs",
     rows: [
-      { label: "Frontend", value: "Vercel" },
-      { label: "Backend", value: "bare VPS + docker-compose" },
-      { label: "CI/CD", value: "GitHub Actions" },
-      { label: "Domains", value: "bhanueso.dev (Vercel registrar)" },
+      { label: "zsh plugins", value: "git, zsh-autosuggestions, zsh-syntax-highlighting, sudo, copypath, copyfile, web-search, dirhistory, extract" },
+      { label: "p10k", value: "Lean style, instant-prompt verbose" },
+      { label: "FZF source", value: "fd --type f --hidden --follow --exclude .git" },
+      { label: "Aliases", value: "claude=--effort max · codex --yolo wrapper · vm-* for VirtualBox VM" },
+      { label: "WezTerm", value: "Discord rich-presence via SetUserVar + IPC bridge" },
+      { label: "Dotfiles", value: "github.com/codeptor (dotfiles repo)" },
     ],
   },
 ];
@@ -60,14 +68,14 @@ const groups = [
 const updatedAt = "APR 30 2026";
 ---
 
-<BaseLayout title="Uses // Bhanu" description={`What ${profile.name} uses daily — hardware, toolchains, web stack, hosting.`}>
+<BaseLayout title="Uses // Bhanu" description={`What ${profile.name} uses daily — workstation, software, AI agents, configs.`}>
   <Nav active="home" />
   <main class="now-shell">
     <article class="now-frame">
       <header class="now-head">
         <span>BENCH_LOG</span>
         <h1>Uses</h1>
-        <p>Daily-driver setup // tools that earn their place</p>
+        <p>Setups // software // configs</p>
         <small>UPDATED {updatedAt}</small>
       </header>
 
