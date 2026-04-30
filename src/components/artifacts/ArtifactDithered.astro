@@ -19,7 +19,7 @@
   const ASCII_CHARS = " .:-=+*#%@";
   const CELL_SIZE = 14;
   const MAX_CELLS = 15000;
-  const TARGET_FPS = 30;
+  const TARGET_FPS = 24;
   const FRAME_MS = 1000 / TARGET_FPS;
 
   const init = () => {
@@ -35,7 +35,17 @@
       let stop = false;
       const start = performance.now();
 
+      // ResizeObserver replaces per-frame getBoundingClientRect — only redo
+      // the dpr-aware backing-size when the element actually changes.
+      let needsResize = true;
+      const sizeObserver = new ResizeObserver(() => {
+        needsResize = true;
+      });
+      sizeObserver.observe(canvas);
+
       const resize = () => {
+        if (!needsResize) return;
+        needsResize = false;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const rect = canvas.getBoundingClientRect();
         const w = Math.max(80, Math.round(rect.width * dpr));
@@ -46,15 +56,32 @@
         }
       };
 
-      const themeColors = () => {
+      // Cache theme colours; recompute only when html `data-theme` flips.
+      type CachedColors = { bg: string; r: number; g: number; b: number };
+      let cachedColors: CachedColors | null = null;
+      let cachedTheme = "";
+
+      const themeColors = (): CachedColors => {
+        const themeKey = document.documentElement.dataset.theme || "dark";
+        if (cachedColors && cachedTheme === themeKey) return cachedColors;
         const styles = getComputedStyle(canvas);
         const bg = styles.getPropertyValue("--art-shader-bg").trim() || "#0a0a0a";
         const ink = styles.getPropertyValue("--art-shader-ink").trim() || "142, 218, 154";
         const [r, g, b] = ink
           .split(",")
           .map((v) => Math.max(0, Math.min(255, parseInt(v.trim(), 10) || 0)));
-        return { bg, r, g, b };
+        cachedColors = { bg, r, g, b };
+        cachedTheme = themeKey;
+        return cachedColors;
       };
+
+      const themeWatcher = new MutationObserver(() => {
+        cachedColors = null;
+      });
+      themeWatcher.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
 
       const draw = (now: number) => {
         if (stop) return;
@@ -121,25 +148,45 @@
         raf = requestAnimationFrame(draw);
       };
 
+      let visible = true;
+
+      const startRaf = () => {
+        if (!stop && visible && !raf) {
+          raf = requestAnimationFrame(draw);
+        }
+      };
+      const stopRaf = () => {
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+      };
+
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (entry.isIntersecting && !raf) {
-              raf = requestAnimationFrame(draw);
-            } else if (!entry.isIntersecting && raf) {
-              cancelAnimationFrame(raf);
-              raf = 0;
-            }
+            visible = entry.isIntersecting;
+            if (visible) startRaf();
+            else stopRaf();
           }
         },
         { threshold: 0.05 },
       );
       observer.observe(canvas);
 
+      const onVisibilityChange = () => {
+        if (document.hidden) stopRaf();
+        else startRaf();
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+
       const cleanup = () => {
         stop = true;
-        if (raf) cancelAnimationFrame(raf);
+        stopRaf();
         observer.disconnect();
+        sizeObserver.disconnect();
+        themeWatcher.disconnect();
+        document.removeEventListener("visibilitychange", onVisibilityChange);
       };
       document.addEventListener("astro:before-swap", cleanup, { once: true });
     });

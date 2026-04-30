@@ -28,9 +28,9 @@
   };
 
   const CELL_SIZE = 8;
-  const TARGET_FPS = 24;
+  const TARGET_FPS = 18;
   const FRAME_MS = 1000 / TARGET_FPS;
-  const OCTAVES = 3;
+  const OCTAVES = 2;
   const MOUSE_RADIUS = 0.40;
   const MOUSE_PUSH = 1.4;
 
@@ -81,7 +81,18 @@
       canvas.addEventListener("pointermove", onMove);
       canvas.addEventListener("pointerleave", onLeave);
 
+      // Resize is only needed when the element actually changes size — using
+      // ResizeObserver instead of querying getBoundingClientRect every frame
+      // eliminates a major source of layout thrashing.
+      let needsResize = true;
+      const sizeObserver = new ResizeObserver(() => {
+        needsResize = true;
+      });
+      sizeObserver.observe(canvas);
+
       const resize = () => {
+        if (!needsResize) return;
+        needsResize = false;
         const dpr = Math.min(window.devicePixelRatio || 1, 2);
         const rect = canvas.getBoundingClientRect();
         const w = Math.max(80, Math.round(rect.width * dpr));
@@ -92,7 +103,14 @@
         }
       };
 
-      const themeColors = () => {
+      // Theme colours change only when the user cycles theme (or on view
+      // transitions). Caching the lookup means we avoid one getComputedStyle
+      // call (forces style recalc) per frame — a big perf win at 18fps × hours.
+      type CachedColors = { bg: string; r: number; g: number; b: number; ramp: string };
+      let cachedColors: CachedColors | null = null;
+      let cachedTheme = "";
+
+      const computeColors = (): CachedColors => {
         const styles = getComputedStyle(canvas);
         const bg = styles.getPropertyValue("--art-shader-bg").trim() || "#0a0a0a";
         const ink = styles.getPropertyValue("--art-shader-ink").trim() || "142, 218, 154";
@@ -103,6 +121,23 @@
         const ramp = RAMPS[themeKey] || RAMPS.dark;
         return { bg, r, g, b, ramp };
       };
+
+      const themeColors = (): CachedColors => {
+        const themeKey = document.documentElement.dataset.theme || "dark";
+        if (cachedColors && cachedTheme === themeKey) return cachedColors;
+        cachedColors = computeColors();
+        cachedTheme = themeKey;
+        return cachedColors;
+      };
+
+      // Force a re-read whenever the html `data-theme` attribute flips.
+      const themeWatcher = new MutationObserver(() => {
+        cachedColors = null;
+      });
+      themeWatcher.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
 
       // Base 2D noise — same product-of-trig pattern as the dithered hero,
       // kept cheap so 3 octaves of fBm + a domain-warp pass stay under budget.
@@ -231,27 +266,49 @@
         raf = requestAnimationFrame(draw);
       };
 
+      let visible = true;
+
+      const startRaf = () => {
+        if (!stop && visible && !raf) {
+          raf = requestAnimationFrame(draw);
+        }
+      };
+      const stopRaf = () => {
+        if (raf) {
+          cancelAnimationFrame(raf);
+          raf = 0;
+        }
+      };
+
       const observer = new IntersectionObserver(
         (entries) => {
           for (const entry of entries) {
-            if (entry.isIntersecting && !raf) {
-              raf = requestAnimationFrame(draw);
-            } else if (!entry.isIntersecting && raf) {
-              cancelAnimationFrame(raf);
-              raf = 0;
-            }
+            visible = entry.isIntersecting;
+            if (visible) startRaf();
+            else stopRaf();
           }
         },
         { threshold: 0.05 },
       );
       observer.observe(canvas);
 
+      // Pause when the tab is backgrounded — browsers throttle RAF but JS
+      // still fires; better to stop entirely and resume cleanly.
+      const onVisibilityChange = () => {
+        if (document.hidden) stopRaf();
+        else startRaf();
+      };
+      document.addEventListener("visibilitychange", onVisibilityChange);
+
       const cleanup = () => {
         stop = true;
-        if (raf) cancelAnimationFrame(raf);
+        stopRaf();
         observer.disconnect();
+        sizeObserver.disconnect();
+        themeWatcher.disconnect();
         canvas.removeEventListener("pointermove", onMove);
         canvas.removeEventListener("pointerleave", onLeave);
+        document.removeEventListener("visibilitychange", onVisibilityChange);
       };
       document.addEventListener("astro:before-swap", cleanup, { once: true });
     });
