@@ -1003,9 +1003,10 @@ a {
 
 .manifest-quicklinks {
   display: grid;
-  /* 100px minimum so 3 columns fit from ~340px content widths
-     (sheet 320 - padding 26*2 = 268 / 3 = 89px → 3 cols at 376px+). */
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  /* auto-fill (not auto-fit) keeps every cell the same width — the last,
+     partially-filled row gets empty tracks instead of stretching its
+     buttons to fill the row. 100px min lets 3 cols fit from ~340px+. */
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 6px;
   margin: 10px 18px 0 0;
 }
@@ -2744,6 +2745,13 @@ a {
     line-height: 0.95;
   }
 
+  /* The right margin on quicklinks exists to keep them from kissing the
+     dither panel — but the panel is hidden on mobile, so reclaim that
+     space. Add bottom margin so the chip row doesn't kiss the status grid. */
+  .manifest-quicklinks {
+    margin: 14px 0 18px 0;
+  }
+
   /* Drop the dither artifact entirely on mobile — too small to read and
      it eats vertical space in the header. */
   .dither-panel {
@@ -2874,13 +2882,6 @@ a {
     display: none;
   }
 
-  /* Header on mobile: keep brand + sound toggle only (matches btn0s' header).
-     Theme toggle hides — user can still cycle via the keyboard `t` shortcut on
-     desktop, but on mobile the sheets aren't theme-prominent enough to warrant
-     a header chip. */
-  .top-nav .theme-toggle {
-    display: none;
-  }
 
   /* Stat-row 3-col grid overflows on narrow screens — collapse to a 3-col
      fluid grid that wraps each tile to a smaller minimum cell. */
