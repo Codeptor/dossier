@@ -1,0 +1,62 @@
+[
+  {
+    "repo": "dossier",
+    "sha": "3109fc6",
+    "message": "fix: hide dither panel on mobile, restore single-column manifest head",
+    "date": "2026-04-30T01:42:56.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "39e2333",
+    "message": "fix: mobile manifest layout matches btn0s — fluid panel clamp, title size, hide ",
+    "date": "2026-04-30T01:38:44.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "38b0bed",
+    "message": "fix: mobile manifest matches btn0s layout — bigger panel, hide overlay labels + ",
+    "date": "2026-04-30T01:30:00.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "fbbb565",
+    "message": "fix: mobile manifest keeps right-side dither panel, smaller (110px) to fit",
+    "date": "2026-04-30T01:24:31.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "3832638",
+    "message": "fix: justify body prose in log entries to full sheet width",
+    "date": "2026-04-30T01:17:11.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "621ce39",
+    "message": "fix: remove angled top-right corner from manifest sheet",
+    "date": "2026-04-30T01:06:05.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "7129e32",
+    "message": "fix: drop dither panel invert/swap experiments, restore original colors",
+    "date": "2026-04-30T01:04:40.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "6fa9577",
+    "message": "fix: mobile single-sheet scroll, DitherPanel centering, desktop dither invert",
+    "date": "2026-04-30T01:02:01.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "c8680d0",
+    "message": "fix: hide iframe artifacts (astrolabe + kharcha embeds) on mobile",
+    "date": "2026-04-30T00:53:05.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "5c3a9eb",
+    "message": "feat: mobile photo-deck stack with horizontal swipe; hide red margin rule on mob",
+    "date": "2026-04-30T00:52:16.000+05:30"
+  }
+]

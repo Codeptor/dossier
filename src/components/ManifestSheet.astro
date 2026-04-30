@@ -4,6 +4,15 @@ import Barcode from "@/components/Barcode.astro";
 import DitherPanel from "@/components/DitherPanel.astro";
 import Sparkline from "@/components/Sparkline.astro";
 import { activity, artifacts, assets, capabilities, history, profile } from "@/data/profile";
+import commits from "@/data/commits.json";
+
+interface Commit {
+  repo: string;
+  sha: string;
+  message: string;
+  date: string;
+}
+const recentCommits: Commit[] = commits as Commit[];
 
 interface Props {
   state: "active" | "left" | "right";
@@ -30,7 +39,8 @@ const stats = [
   <section class="manifest-head">
     <div>
       <h1>Operational<br />Manifest</h1>
-      <p>Subject: {profile.name.toUpperCase()} <span class="manifest-id">// ID: {profile.id}</span></p>
+      <p>Subject: {profile.name.toUpperCase()}</p>
+      <p class="manifest-id">ID: {profile.id}</p>
       <a class="manifest-now" href="/now">NOW_LOG →</a>
     </div>
     <DitherPanel />
@@ -71,6 +81,24 @@ const stats = [
         </div>
         <Sparkline data={activity} />
       </div>
+
+      {recentCommits.length > 0 && (
+        <div class="commit-ticker">
+          <div class="commit-ticker-head">
+            <span>RECENT_TRANSMISSIONS</span>
+            <em>last {recentCommits.length} commits</em>
+          </div>
+          <ul>
+            {recentCommits.slice(0, 6).map((c) => (
+              <li>
+                <code>{c.sha}</code>
+                <strong>{c.repo}</strong>
+                <span class="commit-msg">{c.message}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   )}
 
@@ -150,6 +178,10 @@ const stats = [
     <div>
       <span>{profile.revision}</span>
       <strong>[ OK ]</strong>
+    </div>
+    <div>
+      <span>VISITS</span>
+      <strong data-visit-count>001</strong>
     </div>
     <hr />
     <p>Manifest_End</p>

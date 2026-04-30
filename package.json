@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "astro dev --host 0.0.0.0",
     "fetch:activity": "tsx scripts/fetch-activity.ts",
-    "prebuild": "pnpm run fetch:activity",
+    "fetch:commits": "tsx scripts/fetch-commits.ts",
+    "prebuild": "pnpm run fetch:activity && pnpm run fetch:commits",
     "build": "astro check && astro build",
     "preview": "astro preview --host 0.0.0.0"
   },

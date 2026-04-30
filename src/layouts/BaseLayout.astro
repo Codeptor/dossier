@@ -92,6 +92,11 @@ const personLd = {
   <body>
     <slot />
 
+    <div class="filed-stamp" data-filed-stamp aria-hidden="true">
+      <span>FILED</span>
+      <em>2026.04</em>
+    </div>
+
     <dialog class="shortcut-modal" data-shortcut-modal>
       <article>
         <header>
@@ -167,6 +172,39 @@ const personLd = {
       };
       wireCopyButtons();
       document.addEventListener("astro:page-load", wireCopyButtons);
+
+      // Page-transition FILED stamp — flash a red rubber-stamp animation on
+      // each navigation. Tied to astro:page-load so it fires after the swap
+      // completes (skipping the very first paint).
+      let filedStampPrimed = false;
+      const playFiledStamp = () => {
+        if (!filedStampPrimed) {
+          filedStampPrimed = true;
+          return;
+        }
+        const stamp = document.querySelector<HTMLElement>("[data-filed-stamp]");
+        if (!stamp) return;
+        stamp.classList.remove("playing");
+        // Force reflow so the animation restarts even if the previous one
+        // is still in flight.
+        void stamp.offsetWidth;
+        stamp.classList.add("playing");
+      };
+      document.addEventListener("astro:page-load", playFiledStamp);
+
+      // Visitor counter — purely localStorage; counts how many times THIS
+      // browser has loaded the dossier. No server, no real analytics.
+      try {
+        const KEY = "codeptor-visits";
+        const raw = localStorage.getItem(KEY);
+        const next = (raw ? parseInt(raw, 10) || 0 : 0) + 1;
+        localStorage.setItem(KEY, String(next));
+        document.querySelectorAll<HTMLElement>("[data-visit-count]").forEach((el) => {
+          el.textContent = String(next).padStart(3, "0");
+        });
+      } catch {
+        /* localStorage unavailable */
+      }
 
       // Help modal — `?` key toggles, Esc closes. Bound once per body lifetime.
       const modal = document.querySelector<HTMLDialogElement>("[data-shortcut-modal]");
