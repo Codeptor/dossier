@@ -1,0 +1,11 @@
+{
+  "sha": "61ddc40",
+  "branch": "master",
+  "builtAt": "2026-04-30T11:07:42.400Z",
+  "builtAtHuman": "Thu, 30 Apr 2026 11:07:42 GMT",
+  "lastCommit": {
+    "sha": "3109fc6",
+    "message": "fix: hide dither panel on mobile, restore single-column manifest head",
+    "date": "2026-04-30T01:42:56.000+05:30"
+  }
+}

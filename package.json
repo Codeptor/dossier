@@ -7,7 +7,9 @@
     "dev": "astro dev --host 0.0.0.0",
     "fetch:activity": "tsx scripts/fetch-activity.ts",
     "fetch:commits": "tsx scripts/fetch-commits.ts",
-    "prebuild": "pnpm run fetch:activity && pnpm run fetch:commits",
+    "fetch:letterboxd": "tsx scripts/fetch-letterboxd.ts",
+    "fetch:build": "tsx scripts/fetch-build-meta.ts",
+    "prebuild": "pnpm run fetch:activity && pnpm run fetch:commits && pnpm run fetch:letterboxd && pnpm run fetch:build",
     "build": "astro check && astro build && pagefind --site dist/client --output-subdir _pagefind",
     "preview": "astro preview --host 0.0.0.0"
   },

@@ -1,0 +1,101 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+import { books } from "@/data/reading";
+
+const current = books.filter((b) => b.status === "current");
+const recent = books.filter((b) => b.status === "recent");
+
+const updatedAt = "APR 30 2026";
+---
+
+<BaseLayout title="Reading // Bhanu" description={`Books ${profile.name} is currently reading and recently finished.`}>
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>BOOK_LOG</span>
+        <h1>Reading</h1>
+        <p>Currently reading // recently finished</p>
+        <small>UPDATED {updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        {current.length > 0 && (
+          <div class="now-section">
+            <h2>Current</h2>
+            <ul>
+              {current.map((b) => (
+                <li>
+                  <span>{b.author}</span>
+                  <strong>
+                    {b.link ? (
+                      <a href={b.link} target="_blank" rel="noreferrer noopener" class="book-link">{b.title}</a>
+                    ) : (
+                      b.title
+                    )}
+                    {b.note ? <em class="book-note"> — {b.note}</em> : null}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {recent.length > 0 && (
+          <div class="now-section">
+            <h2>Recently Finished</h2>
+            <ul>
+              {recent.map((b) => (
+                <li>
+                  <span>{b.author}</span>
+                  <strong>
+                    {b.link ? (
+                      <a href={b.link} target="_blank" rel="noreferrer noopener" class="book-link">{b.title}</a>
+                    ) : (
+                      b.title
+                    )}
+                    {b.rating ? <em class="book-rating"> · {"★".repeat(Math.floor(b.rating))}{b.rating - Math.floor(b.rating) >= 0.5 ? "½" : ""}</em> : null}
+                  </strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {current.length === 0 && recent.length === 0 && (
+          <div class="now-empty">
+            <p>No books logged.</p>
+            <p class="hint">// Add to <code>src/data/reading.ts</code></p>
+          </div>
+        )}
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .book-link {
+    color: var(--field-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 0.05em;
+  }
+  .book-note {
+    font-style: normal;
+    color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+    font-size: 11px;
+  }
+  .book-rating {
+    font-style: normal;
+    color: color-mix(in srgb, var(--field-ink) 70%, transparent);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+  }
+</style>

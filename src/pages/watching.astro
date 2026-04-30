@@ -1,0 +1,142 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+import films from "@/data/letterboxd.json";
+
+interface Film {
+  title: string;
+  year: string;
+  rating: number | null;
+  watchedDate: string;
+  rewatch: boolean;
+  link: string;
+}
+
+const recent: Film[] = films as Film[];
+
+const renderRating = (r: number | null): string => {
+  if (r === null) return "·";
+  const full = Math.floor(r);
+  const half = r - full >= 0.5 ? "½" : "";
+  return "★".repeat(full) + half;
+};
+
+const formatDate = (iso: string): string => {
+  if (!iso) return "";
+  try {
+    return new Date(iso).toLocaleDateString("en-US", {
+      year: "2-digit",
+      month: "short",
+      day: "numeric",
+    });
+  } catch {
+    return iso;
+  }
+};
+
+const updatedAt = "LIVE FROM LETTERBOXD";
+---
+
+<BaseLayout title="Watching // Bhanu" description={`Films ${profile.name} has been watching — pulled live from Letterboxd.`}>
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>VIEWING_ROOM</span>
+        <h1>Watching</h1>
+        <p>Last 10 films // letterboxd/{`esoterikunt`}</p>
+        <small>{updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        {recent.length === 0 ? (
+          <div class="now-empty">
+            <p>No films resolved.</p>
+            <p class="hint">// Letterboxd RSS not reachable</p>
+          </div>
+        ) : (
+          <ol class="watchlist">
+            {recent.map((f, i) => (
+              <li class="watchlist-row">
+                <span class="watchlist-rank">{String(i + 1).padStart(2, "0")}</span>
+                <a href={f.link} target="_blank" rel="noreferrer noopener" class="watchlist-track">
+                  <strong>
+                    {f.title}
+                    {f.year ? ` (${f.year})` : ""}
+                    {f.rewatch ? " ↻" : ""}
+                  </strong>
+                  <em>{formatDate(f.watchedDate)}</em>
+                </a>
+                <span class="watchlist-rating">{renderRating(f.rating)}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .watchlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .watchlist-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--field-ink) 18%, transparent);
+    background: color-mix(in srgb, var(--field-ink) 3%, transparent);
+    font-size: 12px;
+  }
+  .watchlist-rank {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: color-mix(in srgb, var(--field-ink) 50%, transparent);
+  }
+  .watchlist-track {
+    display: grid;
+    gap: 2px;
+    color: var(--field-ink);
+    text-decoration: none;
+    overflow: hidden;
+  }
+  .watchlist-track:hover strong {
+    text-decoration: underline;
+  }
+  .watchlist-track strong {
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .watchlist-track em {
+    font-style: normal;
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+  }
+  .watchlist-rating {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: color-mix(in srgb, var(--field-ink) 75%, transparent);
+    white-space: nowrap;
+  }
+</style>

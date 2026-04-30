@@ -1,0 +1,217 @@
+---
+import { getCollection } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+import build from "@/data/build.json";
+import commits from "@/data/commits.json";
+import letterboxd from "@/data/letterboxd.json";
+
+export const prerender = false;
+
+interface Commit { repo: string; sha: string; message: string; date: string; }
+interface Film { title: string; year: string; rating: number | null; watchedDate: string; rewatch: boolean; link: string; }
+
+const recentCommits: Commit[] = commits as Commit[];
+const recentFilms: Film[] = letterboxd as Film[];
+
+// Latest thought
+const thoughts = (await getCollection("thoughts")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+const latestThought = thoughts[0];
+
+// Last.fm now-playing (SSR, same pattern as /now)
+const LASTFM_USER = "esoterikunt";
+async function getRecentTrack(): Promise<string | null> {
+  const key = import.meta.env.LASTFM_API_KEY;
+  if (!key) return null;
+  const url =
+    `https://ws.audioscrobbler.com/2.0/?method=user.getrecenttracks` +
+    `&user=${LASTFM_USER}&api_key=${key}&format=json&limit=1`;
+  try {
+    const res = await fetch(url, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    const track = data?.recenttracks?.track?.[0];
+    if (!track) return null;
+    const isNow = track["@attr"]?.nowplaying === "true";
+    const name = track.name as string;
+    const artist = track.artist?.["#text"] as string;
+    if (!name || !artist) return null;
+    return `${artist} — ${name}${isNow ? " ▶" : " ◼"}`;
+  } catch {
+    return null;
+  }
+}
+const listening = (await getRecentTrack()) ?? "—";
+
+// Edge headers (Vercel) for region info
+const edgeRegion =
+  Astro.request.headers.get("x-vercel-id")?.split("::")[0] ??
+  Astro.request.headers.get("x-vercel-deployment-url") ??
+  "local";
+const visitorCity =
+  Astro.request.headers.get("x-vercel-ip-city") ?? "—";
+const visitorCountry =
+  Astro.request.headers.get("x-vercel-ip-country") ?? "—";
+
+// Uptime since build
+const builtAt = new Date(build.builtAt);
+const uptimeMs = Date.now() - builtAt.getTime();
+const uptimeMin = Math.max(0, Math.floor(uptimeMs / 60000));
+const uptimeStr =
+  uptimeMin < 60
+    ? `${uptimeMin} min`
+    : uptimeMin < 1440
+      ? `${Math.floor(uptimeMin / 60)} h ${uptimeMin % 60} min`
+      : `${Math.floor(uptimeMin / 1440)} d ${Math.floor((uptimeMin % 1440) / 60)} h`;
+
+// Cache the page at the edge for 30s
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=30, stale-while-revalidate=120",
+);
+
+// Unified activity feed — newest 10 events across commits + films
+type Event = { kind: "commit" | "film"; date: string; head: string; body: string; href?: string };
+const events: Event[] = [];
+
+for (const c of recentCommits.slice(0, 8)) {
+  events.push({
+    kind: "commit",
+    date: c.date,
+    head: `commit / ${c.repo}`,
+    body: `${c.sha} — ${c.message}`,
+    href: `https://github.com/Codeptor/${c.repo}/commit/${c.sha}`,
+  });
+}
+for (const f of recentFilms.slice(0, 5)) {
+  events.push({
+    kind: "film",
+    date: f.watchedDate ? `${f.watchedDate}T00:00:00Z` : "",
+    head: `film / letterboxd`,
+    body: `${f.title}${f.year ? ` (${f.year})` : ""}${f.rewatch ? " ↻" : ""}${f.rating ? ` — ${"★".repeat(Math.floor(f.rating))}${f.rating - Math.floor(f.rating) >= 0.5 ? "½" : ""}` : ""}`,
+    href: f.link,
+  });
+}
+
+events.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+const feed = events.slice(0, 10);
+
+const updatedAt = "LIVE";
+---
+
+<BaseLayout title="Pulse // Bhanu" description="Site health + recent activity feed.">
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>SYSTEMS_PULSE</span>
+        <h1>Pulse</h1>
+        <p>Build // edge // listening // activity</p>
+        <small>{updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        <div class="now-section">
+          <h2>Build</h2>
+          <ul>
+            <li><span>SHA</span><strong>{build.sha}</strong></li>
+            <li><span>Branch</span><strong>{build.branch}</strong></li>
+            <li><span>Built</span><strong>{build.builtAtHuman}</strong></li>
+            <li><span>Uptime</span><strong>{uptimeStr}</strong></li>
+            <li><span>Last commit</span><strong>{build.lastCommit?.message ?? "—"}</strong></li>
+          </ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Edge</h2>
+          <ul>
+            <li><span>Region</span><strong>{edgeRegion}</strong></li>
+            <li><span>Visitor city</span><strong>{visitorCity}</strong></li>
+            <li><span>Country</span><strong>{visitorCountry}</strong></li>
+          </ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Live</h2>
+          <ul>
+            <li><span>Listening</span><strong>{listening}</strong></li>
+            <li><span>Latest thought</span><strong>{latestThought ? latestThought.data.title : "—"}</strong></li>
+          </ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Activity Feed</h2>
+          <ol class="pulse-feed">
+            {feed.map((e) => (
+              <li class={`pulse-event pulse-${e.kind}`}>
+                <em>{e.head}</em>
+                {e.href ? (
+                  <a href={e.href} target="_blank" rel="noreferrer noopener" class="pulse-body">{e.body}</a>
+                ) : (
+                  <span class="pulse-body">{e.body}</span>
+                )}
+                <time>{e.date ? new Date(e.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</time>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .pulse-feed {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 4px;
+  }
+  .pulse-event {
+    display: grid;
+    grid-template-columns: 110px 1fr 60px;
+    gap: 12px;
+    align-items: baseline;
+    padding: 8px 12px;
+    border: 1px solid color-mix(in srgb, var(--field-ink) 14%, transparent);
+    font-size: 11px;
+  }
+  .pulse-event em {
+    font-style: normal;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--field-ink) 55%, transparent);
+  }
+  .pulse-body {
+    color: var(--field-ink);
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  a.pulse-body:hover {
+    text-decoration: underline;
+  }
+  .pulse-event time {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    color: color-mix(in srgb, var(--field-ink) 55%, transparent);
+    text-align: right;
+  }
+</style>
