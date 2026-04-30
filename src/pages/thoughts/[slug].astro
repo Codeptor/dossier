@@ -1,4 +1,7 @@
 ---
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { getCollection, render } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Nav from "@/components/Nav.astro";
@@ -32,6 +35,32 @@ const dateLabel = entry.data.date.toLocaleDateString("en-US", {
 // average for technical reading.
 const wordCount = entry.body?.split(/\s+/).filter(Boolean).length ?? 0;
 const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+
+// Last-updated timestamp from git log per file. Falls back to entry.data.date
+// when git isn't reachable (e.g. fresh clone in CI without history).
+const lastUpdated = (() => {
+  try {
+    const here = fileURLToPath(import.meta.url);
+    const repoRoot = resolve(here, "..", "..", "..", "..");
+    const filePath = resolve(repoRoot, "src", "content", "thoughts", `${entry.id}.mdx`);
+    const iso = execFileSync(
+      "git",
+      ["log", "-1", "--format=%cI", "--", filePath],
+      { stdio: ["ignore", "pipe", "ignore"], cwd: repoRoot },
+    )
+      .toString()
+      .trim();
+    if (!iso) return null;
+    const updated = new Date(iso);
+    if (updated.getTime() <= entry.data.date.getTime() + 24 * 60 * 60 * 1000) return null;
+    return updated;
+  } catch {
+    return null;
+  }
+})();
+const lastUpdatedLabel = lastUpdated
+  ? lastUpdated.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  : null;
 
 const canonical = new URL(`/thoughts/${entry.id}/`, Astro.site ?? "https://bhanueso.dev").toString();
 const ogImage = new URL(`/og.png?slug=${entry.id}`, Astro.site ?? "https://bhanueso.dev").toString();
@@ -79,6 +108,12 @@ const articleLd = {
           <em>{entry.data.tag}</em>
           <span>·</span>
           <em>{readingMinutes} min read</em>
+          {lastUpdatedLabel && (
+            <>
+              <span>·</span>
+              <em>updated {lastUpdatedLabel}</em>
+            </>
+          )}
         </div>
         <p class="reading-summary">{entry.data.summary}</p>
       </header>

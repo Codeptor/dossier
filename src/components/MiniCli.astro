@@ -1,0 +1,231 @@
+---
+// Tiny CLI that lives in the manifest. Parses a small command vocabulary
+// and routes / writes inline output. Keeps the dossier metaphor honest —
+// the document is queryable.
+---
+
+<div class="cli" data-cli aria-label="Mini terminal">
+  <div class="cli-output" data-cli-out>
+    <div class="cli-line cli-meta">// type `help` to list commands · ↑↓ history · tab to autocomplete</div>
+  </div>
+  <form class="cli-prompt" data-cli-form>
+    <span class="cli-cursor">▸</span>
+    <input
+      class="cli-input"
+      data-cli-input
+      type="text"
+      autocomplete="off"
+      autocapitalize="off"
+      autocorrect="off"
+      spellcheck="false"
+      aria-label="terminal input"
+    />
+  </form>
+</div>
+
+<script>
+  const COMMANDS = {
+    help: "list commands",
+    whoami: "the dossier subject",
+    ls: "ls thoughts | ls archive | ls routes",
+    cat: "cat <thought-slug> — open a field log entry",
+    open: "open <route> — navigate to a route",
+    theme: "theme dark | blueprint | plaque | light",
+    mute: "stop sounds",
+    unmute: "resume sounds",
+    clear: "clear output",
+    sudo: "(no privileges here)",
+    exit: "(can't escape the dossier)",
+  } as const;
+
+  const ROUTES = [
+    "/", "/thoughts", "/artifacts", "/now", "/pulse", "/uses", "/playlist",
+    "/watching", "/reading", "/contact", "/colophon",
+  ];
+
+  type LineKind = "echo" | "ok" | "warn" | "err" | "meta";
+
+  const init = () => {
+    const root = document.querySelector<HTMLElement>("[data-cli]");
+    if (!root || root.dataset.bound) return;
+    root.dataset.bound = "1";
+
+    const out = root.querySelector<HTMLElement>("[data-cli-out]");
+    const form = root.querySelector<HTMLFormElement>("[data-cli-form]");
+    const input = root.querySelector<HTMLInputElement>("[data-cli-input]");
+    if (!out || !form || !input) return;
+
+    const history: string[] = [];
+    let cursor = -1;
+
+    const print = (text: string, kind: LineKind = "ok") => {
+      const div = document.createElement("div");
+      div.className = `cli-line cli-${kind}`;
+      div.textContent = text;
+      out.appendChild(div);
+      out.scrollTop = out.scrollHeight;
+    };
+
+    const fetchSlugs = async (): Promise<string[]> => {
+      // Pull from sitemap-0 — already generated at build time, no extra API needed.
+      try {
+        const res = await fetch("/sitemap-0.xml");
+        if (!res.ok) return [];
+        const xml = await res.text();
+        const matches = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)];
+        return matches
+          .map((m) => m[1])
+          .filter((u) => u.includes("/thoughts/") && u !== "https://bhanueso.dev/thoughts/")
+          .map((u) => u.replace(/.*\/thoughts\/([^/]+)\/?$/, "$1"));
+      } catch {
+        return [];
+      }
+    };
+
+    const handle = async (raw: string) => {
+      const cmd = raw.trim();
+      if (!cmd) return;
+      print(`▸ ${cmd}`, "echo");
+      history.unshift(cmd);
+      cursor = -1;
+
+      const [head, ...rest] = cmd.split(/\s+/);
+      const arg = rest.join(" ").trim();
+
+      switch (head) {
+        case "help": {
+          for (const [k, v] of Object.entries(COMMANDS)) {
+            print(`${k.padEnd(10)} ${v}`);
+          }
+          return;
+        }
+        case "whoami": {
+          print("bhanu // creative frontend engineer // arch wsl2 // gurugram, in");
+          return;
+        }
+        case "clear": {
+          while (out.firstChild) out.removeChild(out.firstChild);
+          return;
+        }
+        case "ls": {
+          if (arg === "thoughts" || arg === "field-log" || arg === "field_log") {
+            const slugs = await fetchSlugs();
+            if (slugs.length === 0) {
+              print("(empty)", "warn");
+              return;
+            }
+            for (const s of slugs.slice(0, 12)) print(s);
+            return;
+          }
+          if (arg === "archive" || arg === "artifacts") {
+            print("astrolabe  kharcha  dithered  mausam  glyph  signum");
+            print("entropy  aurora  hydrogen  wezterm-presence");
+            return;
+          }
+          if (arg === "routes" || arg === "" || arg === "/") {
+            for (const r of ROUTES) print(r);
+            return;
+          }
+          print(`ls: unknown target '${arg}'`, "err");
+          return;
+        }
+        case "cat": {
+          if (!arg) {
+            print("usage: cat <thought-slug>", "err");
+            return;
+          }
+          const slugs = await fetchSlugs();
+          const match = slugs.find((s) => s === arg || s.includes(arg));
+          if (!match) {
+            print(`cat: '${arg}' not in field log`, "err");
+            return;
+          }
+          print(`opening /thoughts/${match}…`, "meta");
+          window.location.href = `/thoughts/${match}`;
+          return;
+        }
+        case "open":
+        case "goto": {
+          if (!arg) {
+            print("usage: open <route>", "err");
+            return;
+          }
+          const target = arg.startsWith("/") ? arg : `/${arg}`;
+          if (!ROUTES.includes(target.replace(/\/$/, "") || "/")) {
+            print(`open: unknown route '${target}'`, "err");
+            return;
+          }
+          print(`opening ${target}…`, "meta");
+          window.location.href = target;
+          return;
+        }
+        case "theme": {
+          const themes = ["dark", "blueprint", "plaque", "light"];
+          if (!themes.includes(arg)) {
+            print(`theme: must be one of ${themes.join(", ")}`, "err");
+            return;
+          }
+          document.documentElement.dataset.theme = arg;
+          try {
+            localStorage.setItem("codeptor-theme", arg);
+          } catch {}
+          document.querySelectorAll<HTMLElement>("[data-theme-name]").forEach((el) => {
+            el.textContent = arg.toUpperCase();
+          });
+          print(`theme = ${arg}`);
+          return;
+        }
+        case "mute":
+        case "unmute": {
+          try {
+            localStorage.setItem("codeptor-mute", head === "mute" ? "1" : "0");
+            print(head === "mute" ? "audio muted" : "audio unmuted");
+          } catch {
+            print("localStorage unavailable", "err");
+          }
+          return;
+        }
+        case "sudo": {
+          print("permission denied: this is a static dossier", "err");
+          return;
+        }
+        case "exit": {
+          print("nice try.", "warn");
+          return;
+        }
+        default: {
+          print(`command not found: ${head} — try 'help'`, "err");
+        }
+      }
+    };
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const value = input.value;
+      input.value = "";
+      await handle(value);
+    });
+
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        if (history.length === 0) return;
+        cursor = Math.min(cursor + 1, history.length - 1);
+        input.value = history[cursor] ?? "";
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        cursor = Math.max(cursor - 1, -1);
+        input.value = cursor === -1 ? "" : history[cursor] ?? "";
+      } else if (e.key === "Tab") {
+        e.preventDefault();
+        const value = input.value.trim();
+        if (!value) return;
+        const matches = Object.keys(COMMANDS).filter((c) => c.startsWith(value));
+        if (matches.length === 1) input.value = `${matches[0]} `;
+      }
+    });
+  };
+
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>

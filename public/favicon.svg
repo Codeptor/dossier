@@ -1,4 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" fill="#080909"/>
-  <path d="M8 8h6v6H8zM18 8h6v6h-6zM13 18h6v6h-6z" fill="#f4f1df"/>
+  <path d="M8 8h6v6H8zM18 8h6v6h-6zM13 18h6v6h-6z" fill="#f4f1df">
+    <animate attributeName="opacity" values="1;0.45;1" dur="2.6s" repeatCount="indefinite"/>
+  </path>
+  <circle cx="26" cy="26" r="2" fill="#c83a3a">
+    <animate attributeName="r" values="1.6;3;1.6" dur="2.2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="2.2s" repeatCount="indefinite"/>
+  </circle>
 </svg>

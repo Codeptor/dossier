@@ -2,6 +2,7 @@
 import { getCollection } from "astro:content";
 import Barcode from "@/components/Barcode.astro";
 import DitherPanel from "@/components/DitherPanel.astro";
+import MiniCli from "@/components/MiniCli.astro";
 import Sparkline from "@/components/Sparkline.astro";
 import { activity, artifacts, assets, capabilities, history, profile } from "@/data/profile";
 import commits from "@/data/commits.json";
@@ -177,6 +178,11 @@ const stats = [
         ))}
       </div>
     </div>
+  </section>
+
+  <section class="section-block">
+    <h2>06 // Terminal</h2>
+    <MiniCli />
   </section>
 
   <footer class="manifest-foot">
