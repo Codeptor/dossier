@@ -1,0 +1,104 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+const channels = [
+  { label: "Email", value: profile.email, href: `mailto:${profile.email}` },
+  { label: "GitHub", value: "@codeptor", href: "https://github.com/codeptor" },
+  { label: "X", value: "@esotericfrr", href: "https://x.com/esotericfrr" },
+  { label: "LinkedIn", value: "/in/bhanu911", href: "https://www.linkedin.com/in/bhanu911" },
+  { label: "Upwork", value: "available", href: "https://www.upwork.com/" },
+];
+
+const ops = [
+  { label: "Time zone", value: "IST (UTC+5:30)" },
+  { label: "Window", value: "10:00–22:00 IST, weekdays" },
+  { label: "Response", value: "< 24h on email & LinkedIn" },
+  { label: "Status", value: "Open to freelance & contract work" },
+];
+
+const services = [
+  "Brutalist / design-engineering portfolio sites",
+  "Internal tooling — dashboards, admin panels",
+  "Creative coding — WebGL2 shaders, ASCII pipelines",
+  "AI-powered features — Vercel AI SDK, Claude API integrations",
+  "Rust systems with polished frontends",
+  "End-to-end deploy: Vercel / VPS / domain orchestration",
+];
+
+const updatedAt = "APR 30 2026";
+---
+
+<BaseLayout title="Contact // Bhanu" description="Reach Bhanu — channels, working hours, and what I take on.">
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>SIGNAL_RELAY</span>
+        <h1>Contact</h1>
+        <p>Channels // hours // what I take on</p>
+        <small>UPDATED {updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        <div class="now-section">
+          <h2>Channels</h2>
+          <ul>
+            {channels.map((c) => (
+              <li>
+                <span>{c.label}</span>
+                <strong>
+                  <a href={c.href} target="_blank" rel="noreferrer noopener" class="contact-link">{c.value}</a>
+                </strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Operations</h2>
+          <ul>
+            {ops.map((o) => (
+              <li>
+                <span>{o.label}</span>
+                <strong>{o.value}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="now-section">
+          <h2>What I Take On</h2>
+          <ul class="contact-services">
+            {services.map((s) => (
+              <li class="contact-service">
+                <strong>{s}</strong>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .contact-link {
+    color: var(--field-ink);
+    text-decoration: underline;
+    text-decoration-thickness: 0.05em;
+  }
+  .contact-services {
+    grid-template-columns: 1fr;
+  }
+  .contact-service {
+    grid-template-columns: 1fr !important;
+  }
+</style>

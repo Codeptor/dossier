@@ -1,0 +1,83 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+declare const __GIT_SHA__: string;
+const sha = typeof __GIT_SHA__ !== "undefined" ? __GIT_SHA__ : "DEV";
+
+const stack = [
+  { label: "Framework", value: "Astro 5 (static + SSR)" },
+  { label: "Adapter", value: "@astrojs/vercel v9" },
+  { label: "Content", value: "MDX content collections" },
+  { label: "Routing", value: "Astro file-based + view-transitions" },
+  { label: "Styling", value: "Hand-rolled CSS, theme tokens" },
+  { label: "Search", value: "pagefind (static index)" },
+  { label: "Analytics", value: "@vercel/analytics" },
+  { label: "Sitemap", value: "@astrojs/sitemap" },
+];
+
+const fonts = [
+  { label: "Display", value: "Nippo (Indian Type Foundry)" },
+  { label: "Mono", value: "Departure Mono (Helena Zhang)" },
+  { label: "Mono alt", value: "Tronica Mono" },
+];
+
+const data = [
+  { label: "Activity", value: "GitHub commit-search API (build-time, 6mo bucket)" },
+  { label: "Listening", value: "Last.fm user.getrecenttracks (SSR on /now)" },
+  { label: "Location", value: "Vercel edge headers (x-vercel-ip-city)" },
+  { label: "Audio", value: "Two MP3 samples + WebAudio mute toggle" },
+];
+
+const dossierBuild = [
+  { label: "Source", value: "github.com/Codeptor/dossier" },
+  { label: "Commit", value: sha },
+  { label: "Deployed", value: "Vercel / bhanueso.dev" },
+  { label: "Headers", value: "frame-ancestors *, X-Content-Type-Options" },
+];
+
+const updatedAt = "APR 30 2026";
+---
+
+<BaseLayout title="Colophon // Bhanu" description="The site itself — stack, fonts, data sources, build metadata.">
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>SPEC_DOC</span>
+        <h1>Colophon</h1>
+        <p>The site // stack // fonts // data sources</p>
+        <small>UPDATED {updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        <div class="now-section">
+          <h2>Stack</h2>
+          <ul>{stack.map((r) => (<li><span>{r.label}</span><strong>{r.value}</strong></li>))}</ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Typography</h2>
+          <ul>{fonts.map((r) => (<li><span>{r.label}</span><strong>{r.value}</strong></li>))}</ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Live Data</h2>
+          <ul>{data.map((r) => (<li><span>{r.label}</span><strong>{r.value}</strong></li>))}</ul>
+        </div>
+
+        <div class="now-section">
+          <h2>Build</h2>
+          <ul>{dossierBuild.map((r) => (<li><span>{r.label}</span><strong>{r.value}</strong></li>))}</ul>
+        </div>
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>

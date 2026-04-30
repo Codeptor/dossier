@@ -1,0 +1,96 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+const groups = [
+  {
+    heading: "01 // Hardware",
+    rows: [
+      { label: "OS", value: "Arch Linux on WSL2" },
+      { label: "Editor", value: "Neovim + LazyVim" },
+      { label: "Terminal", value: "WezTerm" },
+      { label: "Font", value: "JetBrainsMono Nerd Font" },
+      { label: "Shell", value: "zsh" },
+    ],
+  },
+  {
+    heading: "02 // Toolchains",
+    rows: [
+      { label: "JS pkg", value: "pnpm (bun for select repos)" },
+      { label: "Python", value: "uv" },
+      { label: "Rust", value: "rustup, cargo, cargo-watch" },
+      { label: "Solana", value: "cargo build-sbf" },
+      { label: "Flutter", value: "fvm + Dart MCP server" },
+      { label: "DB", value: "Postgres, SQLite, Redis" },
+    ],
+  },
+  {
+    heading: "03 // Daily CLIs",
+    rows: [
+      { label: "Git", value: "lazygit, gh, fzf" },
+      { label: "Search", value: "ripgrep, fd, zoxide" },
+      { label: "Files", value: "eza, bat, jq, btop" },
+      { label: "AI", value: "claude-code, opencode, gemini-cli" },
+    ],
+  },
+  {
+    heading: "04 // Web Stack",
+    rows: [
+      { label: "Frameworks", value: "Astro 5, Next.js (App Router), Vite" },
+      { label: "Style", value: "Tailwind v4, shadcn/ui" },
+      { label: "Auth", value: "better-auth" },
+      { label: "ORM", value: "Prisma, Drizzle" },
+      { label: "Data", value: "TanStack Query, tRPC" },
+      { label: "Anim", value: "Motion, GSAP, Lenis" },
+    ],
+  },
+  {
+    heading: "05 // Hosting",
+    rows: [
+      { label: "Frontend", value: "Vercel" },
+      { label: "Backend", value: "bare VPS + docker-compose" },
+      { label: "CI/CD", value: "GitHub Actions" },
+      { label: "Domains", value: "bhanueso.dev (Vercel registrar)" },
+    ],
+  },
+];
+
+const updatedAt = "APR 30 2026";
+---
+
+<BaseLayout title="Uses // Bhanu" description={`What ${profile.name} uses daily — hardware, toolchains, web stack, hosting.`}>
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>BENCH_LOG</span>
+        <h1>Uses</h1>
+        <p>Daily-driver setup // tools that earn their place</p>
+        <small>UPDATED {updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        {groups.map((group) => (
+          <div class="now-section">
+            <h2>{group.heading}</h2>
+            <ul>
+              {group.rows.map((row) => (
+                <li>
+                  <span>{row.label}</span>
+                  <strong>{row.value}</strong>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>

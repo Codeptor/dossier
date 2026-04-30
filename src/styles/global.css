@@ -66,9 +66,12 @@
   --code-rule: rgba(187, 47, 38, 0.55);
   --code-inline-bg: rgba(27, 27, 24, 0.06);
 
-  /* dithered hero shader — themed */
-  --art-shader-bg: #0a0a0a;
-  --art-shader-ink: 142, 218, 154; /* green, matches dithered.bhanueso.dev */
+  /* dithered hero shader — themed.
+     On dark theme the panel sits inside the green manifest sheet, so it uses
+     the sheet's green as its background and the cream title colour for its
+     glyphs. Other themes override these in their own selectors below. */
+  --art-shader-bg: #263f2b; /* matches --manifest-from (dark theme) */
+  --art-shader-ink: 241, 243, 220; /* RGB of --manifest-ink (#f1f3dc) */
 
   --mono: "Departure Mono", ui-monospace, SFMono-Regular, monospace;
   --mono-alt: "Tronica Mono", "Departure Mono", ui-monospace, monospace;
@@ -155,8 +158,10 @@ html[data-theme="light"] {
   --code-ink: #f4f1df;
   --code-rule: rgba(187, 47, 38, 0.55);
   --code-inline-bg: rgba(27, 27, 24, 0.07);
-  --art-shader-bg: #1b1b18;
-  --art-shader-ink: 142, 218, 154;
+  /* Light theme keeps the manifest sheet green-on-cream — dither panel
+     mirrors that: lighter sheet-green bg, cream glyphs. */
+  --art-shader-bg: #3a5a3f;
+  --art-shader-ink: 241, 243, 220;
   /* sheets shift toward lighter, brighter variants */
   --manifest-from: #3a5a3f;
   --manifest-to: #2c4a32;
@@ -591,9 +596,13 @@ a {
 
 .manifest-head {
   display: grid;
-  grid-template-columns: 1fr 260px;
-  gap: 28px;
-  min-height: 254px;
+  /* Both columns equal width with NO gap so the dither panel's left edge
+     lines up exactly with the status-grid's middle separator (the Location
+     cell's left edge) directly below. The status-grid uses 0 gap, so we
+     match it here. */
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 260px;
 }
 
 .manifest-head h1,
@@ -631,9 +640,10 @@ a {
 
 .dither-panel {
   position: relative;
-  width: 260px;
-  height: 246px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   background: var(--art-shader-bg);
+  border: 1px solid color-mix(in srgb, var(--manifest-ink) 55%, transparent);
   overflow: hidden;
   color: var(--green-ink);
 }
@@ -690,6 +700,10 @@ a {
   min-height: 48px;
   padding: 12px;
   border-right: 1px solid rgba(241, 243, 220, 0.14);
+}
+
+.status-grid div:last-child {
+  border-right: 0;
 }
 
 .status-grid span,
@@ -2240,6 +2254,9 @@ a {
 }
 
 .archive-sheet {
+  display: flex;
+  flex-direction: column;
+  min-height: 1280px;
   padding: 44px 48px 44px;
   overflow: hidden;
   color: var(--archive-ink);
@@ -2414,7 +2431,22 @@ a {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 44px;
-  margin-top: 30px;
+  /* Push the footer to the bottom of the (now flex-column) archive sheet —
+     authorization / checksum / barcode anchor at the bottom even when entry
+     content is short. */
+  margin-top: auto;
+  padding-top: 30px;
+  /* Both columns top-align so the AUTHORIZATION and CHECKSUM labels sit on
+     the same baseline; their content (constellation / barcode) flows down. */
+  align-items: start;
+}
+
+/* The "No_Further_Data" tail line spans full width below the two columns
+   instead of dropping into a stray grid cell. */
+.archive-foot > p {
+  grid-column: 1 / -1;
+  margin: 18px 0 0;
+  text-align: center;
 }
 
 .archive-foot svg {
@@ -2910,5 +2942,151 @@ a {
   .now-head > span {
     top: -28px;
     right: -22px;
+  }
+}
+
+/* ──── shared sheet frame (used by /now, /uses, /contact, /colophon, /playlist) ──── */
+.now-shell {
+  min-height: 100vh;
+  padding: 96px 16px 96px;
+  display: grid;
+  place-items: start center;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.04), transparent 24rem),
+    var(--bg);
+}
+.now-frame {
+  width: min(100%, 640px);
+  padding: 40px 40px 32px;
+  border: 1px solid color-mix(in srgb, var(--field-ink) 24%, transparent);
+  background:
+    radial-gradient(circle at 80% -8%, var(--field-glow), transparent 40%),
+    var(--field-bg);
+  color: var(--field-ink);
+  font-family: var(--mono);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+  position: relative;
+}
+.now-head {
+  position: relative;
+  padding-bottom: 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--field-ink) 28%, transparent);
+}
+.now-head > span {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  padding: 6px 10px;
+  background: var(--field-ink);
+  color: var(--field-bg);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.now-head h1 {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 32px;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--field-ink);
+}
+.now-head p {
+  margin: 8px 0 0;
+  color: color-mix(in srgb, var(--field-ink) 65%, transparent);
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+.now-head small {
+  position: absolute;
+  right: 0;
+  bottom: 22px;
+  font-size: 9px;
+  color: color-mix(in srgb, var(--field-ink) 50%, transparent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.now-body {
+  margin-top: 22px;
+}
+.now-body ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.now-body li {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--field-ink) 18%, transparent);
+  background: color-mix(in srgb, var(--field-ink) 3%, transparent);
+  font-size: 12px;
+}
+.now-body li span {
+  color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.now-body li strong {
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: var(--field-ink);
+}
+.now-section {
+  margin-top: 22px;
+  padding-top: 18px;
+  border-top: 1px dashed color-mix(in srgb, var(--field-ink) 22%, transparent);
+}
+.now-section h2 {
+  margin: 0 0 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+}
+.now-empty {
+  padding: 22px 0;
+  text-align: center;
+  color: color-mix(in srgb, var(--field-ink) 55%, transparent);
+  font-size: 12px;
+}
+.now-empty .hint {
+  margin-top: 6px;
+  font-size: 10px;
+  color: color-mix(in srgb, var(--field-ink) 40%, transparent);
+}
+.now-empty code {
+  color: var(--field-ink);
+}
+.now-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 28px;
+  padding-top: 22px;
+  border-top: 1px solid color-mix(in srgb, var(--field-ink) 24%, transparent);
+}
+.now-foot a {
+  color: var(--field-ink);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+.now-foot a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 540px) {
+  .now-body li {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 }

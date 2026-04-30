@@ -1,0 +1,144 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+export const prerender = false;
+
+const LASTFM_USER = "esoterikunt";
+
+interface Track {
+  artist: string;
+  name: string;
+  playcount: string;
+  url: string;
+}
+
+async function getTopTracks(period = "1month", limit = 10): Promise<Track[]> {
+  const key = import.meta.env.LASTFM_API_KEY;
+  if (!key) return [];
+  const url =
+    `https://ws.audioscrobbler.com/2.0/?method=user.gettoptracks` +
+    `&user=${LASTFM_USER}&period=${period}&api_key=${key}&format=json&limit=${limit}`;
+  try {
+    const res = await fetch(url, {
+      headers: { accept: "application/json" },
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = data?.toptracks?.track ?? [];
+    return list.map((t: any) => ({
+      artist: t.artist?.name ?? t.artist?.["#text"] ?? "",
+      name: t.name ?? "",
+      playcount: t.playcount ?? "0",
+      url: t.url ?? "",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+const tracks = await getTopTracks("1month", 12);
+const updatedAt = "LIVE FROM LAST.FM";
+---
+
+<BaseLayout title="Playlist // Bhanu" description={`Top tracks ${profile.name} has been listening to over the last 30 days.`}>
+  <Nav active="home" />
+  <main class="now-shell">
+    <article class="now-frame">
+      <header class="now-head">
+        <span>SIGNAL_INTERCEPT</span>
+        <h1>Playlist</h1>
+        <p>Top 12 tracks // last 30 days // last.fm</p>
+        <small>{updatedAt}</small>
+      </header>
+
+      <section class="now-body">
+        {tracks.length === 0 ? (
+          <div class="now-empty">
+            <p>No tracks resolved.</p>
+            <p class="hint">// Last.fm key not configured in this environment</p>
+          </div>
+        ) : (
+          <ol class="playlist">
+            {tracks.map((t, i) => (
+              <li class="playlist-row">
+                <span class="playlist-rank">{String(i + 1).padStart(2, "0")}</span>
+                <a href={t.url} target="_blank" rel="noreferrer noopener" class="playlist-track">
+                  <strong>{t.name}</strong>
+                  <em>{t.artist}</em>
+                </a>
+                <span class="playlist-plays">{t.playcount} ▶</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+
+      <footer class="now-foot">
+        <a href="/">← Back to manifest</a>
+        <Barcode />
+      </footer>
+    </article>
+  </main>
+</BaseLayout>
+
+<style>
+  .playlist {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
+  .playlist-row {
+    display: grid;
+    grid-template-columns: 28px 1fr auto;
+    gap: 14px;
+    align-items: center;
+    padding: 10px 14px;
+    border: 1px solid color-mix(in srgb, var(--field-ink) 18%, transparent);
+    background: color-mix(in srgb, var(--field-ink) 3%, transparent);
+    font-size: 12px;
+  }
+  .playlist-rank {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: color-mix(in srgb, var(--field-ink) 50%, transparent);
+  }
+  .playlist-track {
+    display: grid;
+    gap: 2px;
+    color: var(--field-ink);
+    text-decoration: none;
+    overflow: hidden;
+  }
+  .playlist-track:hover strong {
+    text-decoration: underline;
+  }
+  .playlist-track strong {
+    font-weight: 400;
+    font-size: 13px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .playlist-track em {
+    font-style: normal;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+  }
+  .playlist-plays {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: color-mix(in srgb, var(--field-ink) 50%, transparent);
+    white-space: nowrap;
+  }
+</style>
