@@ -76,6 +76,17 @@ const totalTags = Object.keys(tagCounts).length;
         </button>
       ))}
     </div>
+
+    <div class="field-search">
+      <input
+        type="search"
+        placeholder="// SEARCH FIELD LOG"
+        data-field-search
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="button" class="field-search-clear" data-field-search-clear>CLEAR</button>
+    </div>
     <div class="entry-list" data-entry-list>
       {entries.map((entry) => {
         const href = `/thoughts/${entry.id}`;
@@ -132,6 +143,40 @@ const totalTags = Object.keys(tagCounts).length;
           entry.classList.toggle("hidden", !matches);
         });
       });
+    });
+
+    // Mark entries the visitor has scrolled through (set by [slug].astro's
+    // wireReadMarker via localStorage["codeptor-read"]).
+    try {
+      const raw = localStorage.getItem("codeptor-read") || "[]";
+      const arr = JSON.parse(raw) as string[];
+      entries.forEach((entry) => {
+        const href = entry.getAttribute("href") || "";
+        const slug = href.replace(/^\/thoughts\//, "").replace(/\/$/, "");
+        if (arr.includes(slug)) entry.classList.add("read");
+      });
+    } catch {}
+
+    // Field log search — title + summary substring match (cheap, no index).
+    // Stays inside the same entry-list, just hides non-matching <a>.
+    const searchInput = root.querySelector<HTMLInputElement>("[data-field-search]");
+    const clearBtn = root.querySelector<HTMLButtonElement>("[data-field-search-clear]");
+    const applySearch = () => {
+      const q = (searchInput?.value || "").trim().toLowerCase();
+      entries.forEach((entry) => {
+        if (!q) {
+          entry.classList.remove("hidden-search");
+          return;
+        }
+        const text = (entry.textContent || "").toLowerCase();
+        entry.classList.toggle("hidden-search", !text.includes(q));
+      });
+    };
+    searchInput?.addEventListener("input", applySearch);
+    clearBtn?.addEventListener("click", () => {
+      if (searchInput) searchInput.value = "";
+      applySearch();
+      searchInput?.focus();
     });
   };
   init();

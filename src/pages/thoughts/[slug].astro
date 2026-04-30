@@ -34,7 +34,7 @@ const wordCount = entry.body?.split(/\s+/).filter(Boolean).length ?? 0;
 const readingMinutes = Math.max(1, Math.round(wordCount / 200));
 
 const canonical = new URL(`/thoughts/${entry.id}/`, Astro.site ?? "https://bhanueso.dev").toString();
-const ogImage = new URL("/og.png", Astro.site ?? "https://bhanueso.dev").toString();
+const ogImage = new URL(`/og.png?slug=${entry.id}`, Astro.site ?? "https://bhanueso.dev").toString();
 const articleLd = {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -59,10 +59,16 @@ const articleLd = {
 };
 ---
 
-<BaseLayout title={`${entry.data.title} // Field Log // Bhanu`} description={entry.data.summary}>
+<BaseLayout
+  title={`${entry.data.title} // Field Log // Bhanu`}
+  description={entry.data.summary}
+>
   <Nav active="thoughts" />
   <script is:inline type="application/ld+json" set:html={JSON.stringify(articleLd)} />
-  <main class="reading-shell">
+  <div class="reading-progress" data-reading-progress aria-hidden="true">
+    <div class="reading-progress-bar"></div>
+  </div>
+  <main class="reading-shell" data-reading-slug={entry.id}>
     <article class="reading-sheet">
       <header class="reading-head">
         <a href="/thoughts" class="reading-back">← Field Log</a>
@@ -77,7 +83,12 @@ const articleLd = {
         <p class="reading-summary">{entry.data.summary}</p>
       </header>
 
-      <section class="reading-body">
+      <aside class="reading-toc" data-reading-toc aria-label="Table of contents">
+        <span>// CONTENTS</span>
+        <ol></ol>
+      </aside>
+
+      <section class="reading-body" data-pagefind-body>
         <Content />
       </section>
 
@@ -113,4 +124,83 @@ const articleLd = {
       </footer>
     </article>
   </main>
+
+  <script>
+    // Reading progress bar — pixel-thin top bar that tracks scroll inside
+    // the reading-shell.
+    const wireProgress = () => {
+      const bar = document.querySelector<HTMLElement>("[data-reading-progress] .reading-progress-bar");
+      if (!bar) return;
+      const update = () => {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        const pct = max > 0 ? Math.min(1, doc.scrollTop / max) : 0;
+        bar.style.transform = `scaleX(${pct})`;
+      };
+      update();
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
+    };
+
+    // TOC sidebar — auto-built from h2/h3 inside .reading-body. The headings
+    // already have ids from rehype-slug.
+    const wireToc = () => {
+      const toc = document.querySelector<HTMLElement>("[data-reading-toc]");
+      const list = toc?.querySelector("ol");
+      const body = document.querySelector(".reading-body");
+      if (!toc || !list || !body) return;
+      const headings = body.querySelectorAll<HTMLElement>("h2[id], h3[id]");
+      if (headings.length < 2) {
+        toc.classList.add("empty");
+        return;
+      }
+      while (list.firstChild) list.removeChild(list.firstChild);
+      headings.forEach((h) => {
+        const li = document.createElement("li");
+        li.className = h.tagName.toLowerCase();
+        const a = document.createElement("a");
+        a.href = `#${h.id}`;
+        a.textContent = h.textContent ?? "";
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+    };
+
+    // ✓ Read marker — once the visitor scrolls past the article middle,
+    // remember they've read this entry so the field log list can dim it.
+    const wireReadMarker = () => {
+      const shell = document.querySelector<HTMLElement>("[data-reading-slug]");
+      if (!shell) return;
+      const slug = shell.dataset.readingSlug;
+      if (!slug) return;
+      let marked = false;
+      const check = () => {
+        if (marked) return;
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        if (max > 0 && doc.scrollTop / max > 0.4) {
+          marked = true;
+          try {
+            const raw = localStorage.getItem("codeptor-read") || "[]";
+            const arr = JSON.parse(raw) as string[];
+            if (!arr.includes(slug)) {
+              arr.push(slug);
+              localStorage.setItem("codeptor-read", JSON.stringify(arr));
+            }
+          } catch {}
+        }
+      };
+      check();
+      window.addEventListener("scroll", check, { passive: true });
+    };
+
+    wireProgress();
+    wireToc();
+    wireReadMarker();
+    document.addEventListener("astro:page-load", () => {
+      wireProgress();
+      wireToc();
+      wireReadMarker();
+    });
+  </script>
 </BaseLayout>

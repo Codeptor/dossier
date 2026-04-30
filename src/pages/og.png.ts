@@ -1,10 +1,49 @@
 import { ImageResponse } from "@vercel/og";
 import type { APIRoute } from "astro";
+import { getCollection } from "astro:content";
 import { profile } from "@/data/profile";
 
 export const prerender = false;
 
-export const GET: APIRoute = async () => {
+interface OgContent {
+  title: string;
+  subtitle: string;
+  meta: string;
+}
+
+const buildContent = async (slug: string | null): Promise<OgContent> => {
+  if (slug) {
+    try {
+      const entries = await getCollection("thoughts");
+      const entry = entries.find((e) => e.id === slug);
+      if (entry) {
+        const date = entry.data.date.toLocaleDateString("en-US", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
+        return {
+          title: entry.data.title,
+          subtitle: entry.data.summary,
+          meta: `Field Log // ${entry.data.tag.toUpperCase()} // ${date.toUpperCase()}`,
+        };
+      }
+    } catch {
+      /* fall through */
+    }
+  }
+  return {
+    title: "Operational\nManifest",
+    subtitle: profile.summary,
+    meta: `Subject: ${profile.name.toUpperCase()}`,
+  };
+};
+
+export const GET: APIRoute = async ({ url }) => {
+  const slug = url.searchParams.get("slug");
+  const content = await buildContent(slug);
+  const titleLines = content.title.split("\n");
+
   const html = {
     type: "div",
     props: {
@@ -28,34 +67,21 @@ export const GET: APIRoute = async () => {
               {
                 type: "div",
                 props: {
-                  style: { display: "flex", flexDirection: "column" },
+                  style: { display: "flex", flexDirection: "column", maxWidth: "76%" },
                   children: [
-                    {
+                    ...titleLines.map((line) => ({
                       type: "div",
                       props: {
                         style: {
-                          fontSize: 80,
-                          lineHeight: 0.92,
+                          fontSize: titleLines.length <= 2 ? 80 : 56,
+                          lineHeight: 0.95,
                           letterSpacing: "-0.04em",
                           fontWeight: 700,
                           textTransform: "uppercase",
                         },
-                        children: "Operational",
+                        children: line,
                       },
-                    },
-                    {
-                      type: "div",
-                      props: {
-                        style: {
-                          fontSize: 80,
-                          lineHeight: 0.92,
-                          letterSpacing: "-0.04em",
-                          fontWeight: 700,
-                          textTransform: "uppercase",
-                        },
-                        children: "Manifest",
-                      },
-                    },
+                    })),
                     {
                       type: "div",
                       props: {
@@ -66,7 +92,7 @@ export const GET: APIRoute = async () => {
                           letterSpacing: "0.28em",
                           textTransform: "uppercase",
                         },
-                        children: `Subject: ${profile.name.toUpperCase()}`,
+                        children: content.meta,
                       },
                     },
                   ],
@@ -109,7 +135,7 @@ export const GET: APIRoute = async () => {
                     lineHeight: 1.3,
                     color: "rgba(241,243,220,0.92)",
                   },
-                  children: profile.summary,
+                  children: content.subtitle,
                 },
               },
               {

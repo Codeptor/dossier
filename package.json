@@ -8,7 +8,7 @@
     "fetch:activity": "tsx scripts/fetch-activity.ts",
     "fetch:commits": "tsx scripts/fetch-commits.ts",
     "prebuild": "pnpm run fetch:activity && pnpm run fetch:commits",
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && pagefind --site dist/client --output-subdir _pagefind",
     "preview": "astro preview --host 0.0.0.0"
   },
   "dependencies": {
@@ -22,6 +22,7 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/og": "^0.11.1",
     "astro": "^5.15.6",
+    "pagefind": "^1.5.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "rehype-autolink-headings": "^7.1.0",
