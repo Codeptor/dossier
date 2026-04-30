@@ -4,8 +4,10 @@ import Nav from "@/components/Nav.astro";
 import Barcode from "@/components/Barcode.astro";
 import { profile } from "@/data/profile";
 
+import build from "@/data/build.json";
+
 declare const __GIT_SHA__: string;
-const sha = typeof __GIT_SHA__ !== "undefined" ? __GIT_SHA__ : "DEV";
+const sha = typeof __GIT_SHA__ !== "undefined" ? __GIT_SHA__ : build.sha ?? "DEV";
 
 const stack = [
   { label: "Framework", value: "Astro 5 (static + SSR)" },
@@ -34,6 +36,9 @@ const data = [
 const dossierBuild = [
   { label: "Source", value: "github.com/Codeptor/dossier" },
   { label: "Commit", value: sha },
+  { label: "Branch", value: build.branch },
+  { label: "Built", value: build.builtAtHuman },
+  { label: "Last log", value: build.lastCommit?.message ?? "—" },
   { label: "Deployed", value: "Vercel / bhanueso.dev" },
   { label: "Headers", value: "frame-ancestors *, X-Content-Type-Options" },
 ];

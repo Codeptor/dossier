@@ -3392,3 +3392,27 @@ a {
 .cli-input::placeholder {
   color: color-mix(in srgb, var(--manifest-ink) 38%, transparent);
 }
+
+/* ──── reading comments / Giscus mount ──── */
+.reading-comments {
+  margin-top: 48px;
+  padding-top: 28px;
+  border-top: 1px solid color-mix(in srgb, var(--field-ink) 16%, transparent);
+}
+.reading-comments h2 {
+  margin: 0 0 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+}
+.reading-comments-hint {
+  margin: 0 0 18px;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--field-ink) 65%, transparent);
+}
+.reading-comments-hint a {
+  color: var(--field-ink);
+}

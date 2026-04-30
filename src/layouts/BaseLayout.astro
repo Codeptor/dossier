@@ -40,7 +40,12 @@ const personLd = {
     <meta name="author" content={profile.name} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
     <link rel="alternate" type="application/rss+xml" title="Field Log" href="/rss.xml" />
+    <!-- Webmentions: register https://webmention.io with this domain to
+         receive cross-site replies. Replace USER below once registered. -->
+    <link rel="webmention" href="https://webmention.io/bhanueso.dev/webmention" />
+    <link rel="pingback" href="https://webmention.io/bhanueso.dev/xmlrpc" />
     <script is:inline>
       // Apply the persisted theme synchronously before first paint, AND on
       // every Astro view-transition swap (the ClientRouter merges html
@@ -182,23 +187,41 @@ const personLd = {
         /* localStorage unavailable */
       }
 
-      // Help modal — `?` key toggles, Esc closes. Bound once per body lifetime.
-      const modal = document.querySelector<HTMLDialogElement>("[data-shortcut-modal]");
-      const closeBtn = document.querySelector<HTMLButtonElement>("[data-shortcut-close]");
-      closeBtn?.addEventListener("click", () => modal?.close());
-      modal?.addEventListener("click", (e) => {
-        if (e.target === modal) modal.close();
-      });
+      // Help modal — `?` key toggles, Esc closes. The modal element is
+      // re-queried every time so view-transition swaps don't leave us with
+      // a stale reference.
+      const wireModalChrome = () => {
+        const modal = document.querySelector<HTMLDialogElement>("[data-shortcut-modal]");
+        const closeBtn = document.querySelector<HTMLButtonElement>("[data-shortcut-close]");
+        if (modal && !modal.dataset.bound) {
+          modal.dataset.bound = "1";
+          modal.addEventListener("click", (e) => {
+            if (e.target === modal) modal.close();
+          });
+        }
+        if (closeBtn && !closeBtn.dataset.bound) {
+          closeBtn.dataset.bound = "1";
+          closeBtn.addEventListener("click", () => {
+            document.querySelector<HTMLDialogElement>("[data-shortcut-modal]")?.close();
+          });
+        }
+      };
+      wireModalChrome();
+      document.addEventListener("astro:page-load", wireModalChrome);
+
       document.addEventListener("keydown", (e) => {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         const target = e.target as HTMLElement | null;
         if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
         if (e.key === "?" || (e.shiftKey && e.key === "/")) {
           e.preventDefault();
+          const modal = document.querySelector<HTMLDialogElement>("[data-shortcut-modal]");
           if (!modal) return;
-          modal.open ? modal.close() : modal.showModal();
-        } else if (e.key === "Escape" && modal?.open) {
-          modal.close();
+          if (modal.open) modal.close();
+          else modal.showModal();
+        } else if (e.key === "Escape") {
+          const modal = document.querySelector<HTMLDialogElement>("[data-shortcut-modal]");
+          if (modal?.open) modal.close();
         }
       });
     </script>

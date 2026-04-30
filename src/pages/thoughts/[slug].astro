@@ -152,6 +152,16 @@ const articleLd = {
         )}
       </nav>
 
+      <section class="reading-comments" aria-label="Comments">
+        <h2>// Discussion</h2>
+        <p class="reading-comments-hint">
+          Comments are powered by GitHub Discussions via Giscus. Sign in with your GitHub account to add a reply, or
+          {" "}
+          <a href={`https://x.com/intent/tweet?url=${encodeURIComponent(canonical)}&text=${encodeURIComponent(entry.data.title)}`} target="_blank" rel="noreferrer noopener">discuss on X</a>.
+        </p>
+        <div class="giscus" data-giscus></div>
+      </section>
+
       <footer class="reading-foot">
         <a href="/thoughts" class="reading-back">← Field Log</a>
         <Barcode />
@@ -229,13 +239,42 @@ const articleLd = {
       window.addEventListener("scroll", check, { passive: true });
     };
 
+    // Giscus comments — loads only on thought entries. Update the `repo`,
+    // `repoId`, `category`, and `categoryId` after enabling GitHub
+    // Discussions on the dossier repo and installing the Giscus app:
+    // https://giscus.app
+    const wireGiscus = () => {
+      const mount = document.querySelector<HTMLElement>("[data-giscus]");
+      if (!mount || mount.dataset.bound) return;
+      mount.dataset.bound = "1";
+      const s = document.createElement("script");
+      s.src = "https://giscus.app/client.js";
+      s.crossOrigin = "anonymous";
+      s.async = true;
+      s.setAttribute("data-repo", "Codeptor/dossier");
+      s.setAttribute("data-repo-id", "REPLACE_ME");
+      s.setAttribute("data-category", "Thoughts");
+      s.setAttribute("data-category-id", "REPLACE_ME");
+      s.setAttribute("data-mapping", "pathname");
+      s.setAttribute("data-strict", "1");
+      s.setAttribute("data-reactions-enabled", "1");
+      s.setAttribute("data-emit-metadata", "0");
+      s.setAttribute("data-input-position", "top");
+      s.setAttribute("data-theme", "transparent_dark");
+      s.setAttribute("data-lang", "en");
+      s.setAttribute("data-loading", "lazy");
+      mount.appendChild(s);
+    };
+
     wireProgress();
     wireToc();
     wireReadMarker();
+    wireGiscus();
     document.addEventListener("astro:page-load", () => {
       wireProgress();
       wireToc();
       wireReadMarker();
+      wireGiscus();
     });
   </script>
 </BaseLayout>
