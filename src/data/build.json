@@ -1,11 +1,11 @@
 {
-  "sha": "bada4a7",
+  "sha": "8478fb2",
   "branch": "master",
-  "builtAt": "2026-04-30T11:58:00.058Z",
-  "builtAtHuman": "Thu, 30 Apr 2026 11:58:00 GMT",
+  "builtAt": "2026-04-30T12:19:57.325Z",
+  "builtAtHuman": "Thu, 30 Apr 2026 12:19:57 GMT",
   "lastCommit": {
-    "sha": "9def0fd",
-    "message": "feat: webmention + giscus markup, build-meta badges in colophon, apple-touch-ico",
-    "date": "2026-04-30T16:43:03.000+05:30"
+    "sha": "8478fb2",
+    "message": "fix: equal-width quicklinks via auto-fill, restore theme toggle on mobile, mobil",
+    "date": "2026-04-30T17:47:40.000+05:30"
   }
 }
