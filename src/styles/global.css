@@ -3546,3 +3546,17 @@ a {
 .star-half-empty {
   opacity: 0.22;
 }
+
+/* Mobile overrides for the shared sheet frame — these live AFTER the
+   .now-head desktop rules so they win on equal specificity. The earlier
+   @media (max-width: 760px) block sits before .now-head and gets clobbered
+   for `position`, hence this trailing block. */
+@media (max-width: 760px) {
+  .now-head small {
+    position: static;
+    display: block;
+    margin-top: 8px;
+    right: auto;
+    bottom: auto;
+  }
+}

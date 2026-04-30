@@ -103,18 +103,33 @@ const stateFor = (sheet: Sheet): SheetState => {
     window.location.href = route;
   };
 
+  // AbortController bound to the lifetime of the current page. On every
+  // astro:page-load we abort the previous controller (removing all of its
+  // attached listeners) and create a fresh one — guarantees no listener
+  // accumulation across view-transition swaps and no stale closures
+  // referencing previously-active sheets.
+  let controlsAbort: AbortController | null = null;
+
   const attachSheetControls = () => {
+    controlsAbort?.abort();
+    controlsAbort = new AbortController();
+    const { signal } = controlsAbort;
+
     const sheets = Array.from(document.querySelectorAll<HTMLElement>("[data-sheet][data-route]"));
     const active = document.querySelector<HTMLElement>(".sheet.active");
     const activeRoute = currentRoute();
 
     sheets.forEach((sheet) => {
-      sheet.addEventListener("click", (event) => {
-        if (sheet.classList.contains("active")) return;
-        const target = event.target as HTMLElement;
-        if (target.closest("a")) return;
-        go(sheet.dataset.route || "/");
-      });
+      sheet.addEventListener(
+        "click",
+        (event) => {
+          if (sheet.classList.contains("active")) return;
+          const target = event.target as HTMLElement;
+          if (target.closest("a")) return;
+          go(sheet.dataset.route || "/");
+        },
+        { signal },
+      );
     });
 
     if (!active) return;
@@ -123,48 +138,51 @@ const stateFor = (sheet: Sheet): SheetState => {
     let startY = 0;
     let dragging = false;
     let pointerId = 0;
-
     let lockedHorizontal = false;
 
-    active.addEventListener("pointerdown", (event) => {
-      const target = event.target as HTMLElement;
-      if (target.closest("a, button")) return;
-      // Don't preventDefault here — that blocks native vertical scroll on
-      // touch. We let touch-action: pan-y on the sheet handle scroll
-      // disambiguation; once we detect a horizontal-dominant gesture in
-      // pointermove we lock the drag and capture the pointer.
-      pointerId = event.pointerId;
-      startX = event.clientX;
-      startY = event.clientY;
-      dragging = true;
-      lockedHorizontal = false;
-    });
+    active.addEventListener(
+      "pointerdown",
+      (event) => {
+        const target = event.target as HTMLElement;
+        if (target.closest("a, button")) return;
+        // Don't preventDefault here — that blocks native vertical scroll on
+        // touch. We let touch-action: pan-y on the sheet handle scroll
+        // disambiguation; once we detect a horizontal-dominant gesture in
+        // pointermove we lock the drag and capture the pointer.
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startY = event.clientY;
+        dragging = true;
+        lockedHorizontal = false;
+      },
+      { signal },
+    );
 
-    active.addEventListener("pointermove", (event) => {
-      if (!dragging || event.pointerId !== pointerId) return;
-      const dx = event.clientX - startX;
-      const dy = event.clientY - startY;
+    active.addEventListener(
+      "pointermove",
+      (event) => {
+        if (!dragging || event.pointerId !== pointerId) return;
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
 
-      if (!lockedHorizontal) {
-        // Decide direction at first significant motion. Vertical wins on
-        // ties to favour scroll; horizontal locks in the drag.
-        if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
-        if (Math.abs(dy) > Math.abs(dx)) {
-          // Vertical scroll — release the gesture entirely.
-          dragging = false;
-          return;
+        if (!lockedHorizontal) {
+          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+          if (Math.abs(dy) > Math.abs(dx)) {
+            dragging = false;
+            return;
+          }
+          lockedHorizontal = true;
+          active.classList.add("dragging");
+          try {
+            active.setPointerCapture(pointerId);
+          } catch (_) {}
         }
-        lockedHorizontal = true;
-        active.classList.add("dragging");
-        try {
-          active.setPointerCapture(pointerId);
-        } catch (_) {}
-      }
 
-      // Horizontal-locked: prevent any residual scroll, track drag.
-      event.preventDefault();
-      active.style.setProperty("--drag-x", `${dx}px`);
-    });
+        event.preventDefault();
+        active.style.setProperty("--drag-x", `${dx}px`);
+      },
+      { signal },
+    );
 
     const release = (event: PointerEvent) => {
       if (!dragging || event.pointerId !== pointerId) return;
@@ -179,24 +197,19 @@ const stateFor = (sheet: Sheet): SheetState => {
       const passed = Math.abs(dx) > 120;
 
       if (passed) {
-        // dx > 0 (drag right) advances; dx < 0 (drag left) retreats.
-        // Routes cycle so the user never hits a dead boundary.
         const direction = dx > 0 ? 1 : -1;
         const nextIndex = (index + direction + routes.length) % routes.length;
         const nextRoute = routes[nextIndex];
-        // keep --drag-x set so the view-transition captures the
-        // dragged-off transform as the FROM state
         document.documentElement.style.setProperty("--swap-dir", String(direction));
         swapSound();
         go(nextRoute);
       } else {
-        // under threshold — CSS transition smoothly snaps back to 0
         active.style.removeProperty("--drag-x");
       }
     };
 
-    active.addEventListener("pointerup", release);
-    active.addEventListener("pointercancel", release);
+    active.addEventListener("pointerup", release, { signal });
+    active.addEventListener("pointercancel", release, { signal });
   };
 
   attachSheetControls();

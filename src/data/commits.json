@@ -1,6 +1,30 @@
 [
   {
     "repo": "dossier",
+    "sha": "6433bca",
+    "message": "fix: stack UPDATED stamp below description on mobile to avoid overlap",
+    "date": "2026-04-30T19:10:47.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "ba0ee45",
+    "message": "chore: refresh build data",
+    "date": "2026-04-30T17:54:01.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "4b04ea7",
+    "message": "fix: add rel=me to social links for webmention.io / IndieAuth verification",
+    "date": "2026-04-30T17:51:11.000+05:30"
+  },
+  {
+    "repo": "dossier",
+    "sha": "74b6936",
+    "message": "feat(giscus): wire real Codeptor/dossier repo + General category IDs",
+    "date": "2026-04-30T17:50:20.000+05:30"
+  },
+  {
+    "repo": "dossier",
     "sha": "8478fb2",
     "message": "fix: equal-width quicklinks via auto-fill, restore theme toggle on mobile, mobil",
     "date": "2026-04-30T17:47:40.000+05:30"
@@ -34,29 +58,5 @@
     "sha": "5294a5a",
     "message": "feat: mini CLI on manifest, animated favicon, last-updated stamp on thoughts",
     "date": "2026-04-30T16:41:20.000+05:30"
-  },
-  {
-    "repo": "dossier",
-    "sha": "4c9be18",
-    "message": "feat: /watching (letterboxd RSS), /reading, /pulse meta page + 3 new quicklinks",
-    "date": "2026-04-30T16:38:15.000+05:30"
-  },
-  {
-    "repo": "dossier",
-    "sha": "61ddc40",
-    "message": "feat: print stylesheet + bump /now updated date",
-    "date": "2026-04-30T16:04:09.000+05:30"
-  },
-  {
-    "repo": "dossier",
-    "sha": "2d410fb",
-    "message": "feat: per-thought OG, reading progress + TOC, search box, read marker; revert fi",
-    "date": "2026-04-30T16:03:01.000+05:30"
-  },
-  {
-    "repo": "dossier",
-    "sha": "2d4e7f2",
-    "message": "feat: github commits ticker, visitor counter, FILED page-transition stamp",
-    "date": "2026-04-30T15:57:33.000+05:30"
   }
 ]
