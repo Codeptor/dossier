@@ -99,7 +99,7 @@ const stats = [
             <em data-commit-count>last {recentCommits.length} commits</em>
           </div>
           <ul data-commit-list>
-            {recentCommits.slice(0, 6).map((c) => (
+            {recentCommits.map((c) => (
               <li>
                 <code>{c.sha}</code>
                 <strong>{c.repo}</strong>
@@ -225,9 +225,8 @@ const stats = [
       if (!res.ok) return;
       const data = (await res.json()) as ApiCommit[];
       if (!Array.isArray(data) || data.length === 0) return;
-      const visible = data.slice(0, 6);
       while (list.firstChild) list.removeChild(list.firstChild);
-      for (const c of visible) {
+      for (const c of data) {
         const li = document.createElement("li");
         const code = document.createElement("code");
         code.textContent = c.sha;
