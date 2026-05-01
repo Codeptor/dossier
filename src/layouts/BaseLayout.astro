@@ -173,19 +173,52 @@ const personLd = {
       wireCopyButtons();
       document.addEventListener("astro:page-load", wireCopyButtons);
 
-      // Visitor counter — purely localStorage; counts how many times THIS
-      // browser has loaded the dossier. No server, no real analytics.
-      try {
-        const KEY = "codeptor-visits";
-        const raw = localStorage.getItem(KEY);
-        const next = (raw ? parseInt(raw, 10) || 0 : 0) + 1;
-        localStorage.setItem(KEY, String(next));
+      // Visitor counter — global total via the free abacus hit-counter API
+      // (jasoncameron.dev). Increments once per browser session, then fetches
+      // the running total on every page-load so all `[data-visit-count]`
+      // slots stay in sync. Fails silently when offline; the DOM keeps its
+      // "001" placeholder.
+      const SESSION_KEY = "codeptor-visit-counted";
+      const NAMESPACE = "bhanueso";
+      const COUNTER = "dossier";
+      const ENDPOINT = `https://abacus.jasoncameron.dev`;
+
+      const renderVisits = (n: number) => {
+        const text = String(n).padStart(3, "0");
         document.querySelectorAll<HTMLElement>("[data-visit-count]").forEach((el) => {
-          el.textContent = String(next).padStart(3, "0");
+          el.textContent = text;
         });
-      } catch {
-        /* localStorage unavailable */
-      }
+      };
+
+      const fetchVisits = async () => {
+        let alreadyCounted = false;
+        try {
+          alreadyCounted = sessionStorage.getItem(SESSION_KEY) === "1";
+        } catch {
+          /* sessionStorage unavailable */
+        }
+        const path = alreadyCounted ? "get" : "hit";
+        const url = `${ENDPOINT}/${path}/${NAMESPACE}/${COUNTER}`;
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+          if (!res.ok) return;
+          const data = await res.json();
+          const value = typeof data?.value === "number" ? data.value : null;
+          if (value === null) return;
+          renderVisits(value);
+          if (!alreadyCounted) {
+            try {
+              sessionStorage.setItem(SESSION_KEY, "1");
+            } catch {
+              /* ignore */
+            }
+          }
+        } catch {
+          /* offline / abacus down — leave the DOM placeholder alone */
+        }
+      };
+      fetchVisits();
+      document.addEventListener("astro:page-load", fetchVisits);
 
       // Help modal — `?` key toggles, Esc closes. The modal element is
       // re-queried every time so view-transition swaps don't leave us with
