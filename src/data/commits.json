@@ -1,21 +1,21 @@
 [
   {
     "repo": "dossier",
+    "sha": "2b9f974",
+    "message": "fix: show all 10 commits in recent transmissions list to match header count",
+    "date": "2026-05-01T17:39:07Z"
+  },
+  {
+    "repo": "dossier",
+    "sha": "f553180",
+    "message": "feat: real-time recent commits via /api/recent-commits.json + security headers i",
+    "date": "2026-05-01T17:33:49Z"
+  },
+  {
+    "repo": "dossier",
     "sha": "1179014",
     "message": "fix: recent commits via repos+commits API instead of search (no indexing latency",
     "date": "2026-05-01T17:20:24Z"
-  },
-  {
-    "repo": "dossier",
-    "sha": "e003a62",
-    "message": "feat: blueprint theme as default for first-time visitors",
-    "date": "2026-05-01T17:16:57Z"
-  },
-  {
-    "repo": "dossier",
-    "sha": "42ed58a",
-    "message": "feat: global visitor counter via abacus.jasoncameron.dev (replaces per-browser l",
-    "date": "2026-05-01T17:08:35Z"
   },
   {
     "repo": "kharcha",

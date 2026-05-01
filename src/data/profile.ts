@@ -94,7 +94,7 @@ export const artifacts = [
   {
     name: "SIGNUM",
     year: "2026",
-    description: "Personal sigil and motion identity experiments.",
+    description: "Quantitative equity trading bot — LightGBM on S&P 500, HRP weights, Alpaca execution.",
     href: "https://github.com/Codeptor/signum",
   },
   {
@@ -118,7 +118,7 @@ export const artifacts = [
   {
     name: "GLYPH",
     year: "2026",
-    description: "WebGL and canvas experiments for character-based rendering.",
+    description: "Real-time browser ASCII generator — 9 art styles, 8 dithering algorithms, animated FX.",
     href: "https://glyph.bhanueso.dev",
   },
   {
