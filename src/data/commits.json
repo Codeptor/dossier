@@ -1,62 +1,62 @@
 [
   {
     "repo": "dossier",
-    "sha": "6433bca",
-    "message": "fix: stack UPDATED stamp below description on mobile to avoid overlap",
-    "date": "2026-04-30T19:10:47.000+05:30"
+    "sha": "e003a62",
+    "message": "feat: blueprint theme as default for first-time visitors",
+    "date": "2026-05-01T17:16:57Z"
   },
   {
     "repo": "dossier",
-    "sha": "ba0ee45",
-    "message": "chore: refresh build data",
-    "date": "2026-04-30T17:54:01.000+05:30"
+    "sha": "42ed58a",
+    "message": "feat: global visitor counter via abacus.jasoncameron.dev (replaces per-browser l",
+    "date": "2026-05-01T17:08:35Z"
   },
   {
     "repo": "dossier",
-    "sha": "4b04ea7",
-    "message": "fix: add rel=me to social links for webmention.io / IndieAuth verification",
-    "date": "2026-04-30T17:51:11.000+05:30"
+    "sha": "7a6c5a3",
+    "message": "fix: swipe handler uses AbortController for clean re-binding; UPDATED stamp trul",
+    "date": "2026-04-30T13:46:49Z"
   },
   {
-    "repo": "dossier",
-    "sha": "74b6936",
-    "message": "feat(giscus): wire real Codeptor/dossier repo + General category IDs",
-    "date": "2026-04-30T17:50:20.000+05:30"
+    "repo": "kharcha",
+    "sha": "640d812",
+    "message": "feat(web): allow framing via Content-Security-Policy headers",
+    "date": "2026-04-29T17:42:09Z"
   },
   {
-    "repo": "dossier",
-    "sha": "8478fb2",
-    "message": "fix: equal-width quicklinks via auto-fill, restore theme toggle on mobile, mobil",
-    "date": "2026-04-30T17:47:40.000+05:30"
+    "repo": "astrolabe",
+    "sha": "4b3969f",
+    "message": "feat(export): preset modal with adjustable canvas, bg, legend, scale",
+    "date": "2026-04-28T10:30:33Z"
   },
   {
-    "repo": "dossier",
-    "sha": "8030a56",
-    "message": "fix: responsive audit batch — TOC at 1300px, hover:none touch reveals, badge cli",
-    "date": "2026-04-30T17:30:00.000+05:30"
+    "repo": "kharcha",
+    "sha": "aa74090",
+    "message": "feat(web): add NVIDIA brand logo to provider icons",
+    "date": "2026-04-26T12:27:31Z"
   },
   {
-    "repo": "dossier",
-    "sha": "84a9ffb",
-    "message": "feat: stars component for ratings, expanded reading list, drop activity feed and",
-    "date": "2026-04-30T17:29:50.000+05:30"
+    "repo": "kharcha",
+    "sha": "a977290",
+    "message": "fix: stop filtering PNGs from prod + show all models in day breakdown",
+    "date": "2026-04-26T12:22:59Z"
   },
   {
-    "repo": "dossier",
-    "sha": "bada4a7",
-    "message": "chore: refresh activity + build meta, /uses tweaks (codex, gear, browsers, music",
-    "date": "2026-04-30T16:45:12.000+05:30"
+    "repo": "astrolabe",
+    "sha": "c503f24",
+    "message": "docs(qol): plan export mobile reading improvements",
+    "date": "2026-04-26T09:55:32Z"
   },
   {
-    "repo": "dossier",
-    "sha": "9def0fd",
-    "message": "feat: webmention + giscus markup, build-meta badges in colophon, apple-touch-ico",
-    "date": "2026-04-30T16:43:03.000+05:30"
+    "repo": "astrolabe",
+    "sha": "f0e3e39",
+    "message": "feat(app): memoize plaque, relocate shortcuts + cursor readout",
+    "date": "2026-04-17T13:58:22Z"
   },
   {
-    "repo": "dossier",
-    "sha": "5294a5a",
-    "message": "feat: mini CLI on manifest, animated favicon, last-updated stamp on thoughts",
-    "date": "2026-04-30T16:41:20.000+05:30"
+    "repo": "dithered",
+    "sha": "bf44bfc",
+    "message": "chore: remove docs from tracking",
+    "date": "2026-03-20T02:50:42Z"
   }
 ]
