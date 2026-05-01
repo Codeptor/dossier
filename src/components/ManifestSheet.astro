@@ -96,9 +96,9 @@ const stats = [
         <div class="commit-ticker">
           <div class="commit-ticker-head">
             <span>RECENT_TRANSMISSIONS</span>
-            <em>last {recentCommits.length} commits</em>
+            <em data-commit-count>last {recentCommits.length} commits</em>
           </div>
-          <ul>
+          <ul data-commit-list>
             {recentCommits.slice(0, 6).map((c) => (
               <li>
                 <code>{c.sha}</code>
@@ -211,6 +211,42 @@ const stats = [
   // on swap so the prior interval doesn't pile up across navigations.
   let clockTimer: number | undefined;
 
+  // Recent commits hydration — replaces the build-time list with a live one
+  // pulled from /api/recent-commits.json (edge-cached 60s). Falls back
+  // silently to the prerendered list if the endpoint is unreachable.
+  interface ApiCommit { repo: string; sha: string; message: string; date: string; }
+
+  const hydrateCommits = async () => {
+    const list = document.querySelector<HTMLElement>("[data-commit-list]");
+    const counter = document.querySelector<HTMLElement>("[data-commit-count]");
+    if (!list) return;
+    try {
+      const res = await fetch("/api/recent-commits.json", { signal: AbortSignal.timeout(4000) });
+      if (!res.ok) return;
+      const data = (await res.json()) as ApiCommit[];
+      if (!Array.isArray(data) || data.length === 0) return;
+      const visible = data.slice(0, 6);
+      while (list.firstChild) list.removeChild(list.firstChild);
+      for (const c of visible) {
+        const li = document.createElement("li");
+        const code = document.createElement("code");
+        code.textContent = c.sha;
+        const repo = document.createElement("strong");
+        repo.textContent = c.repo;
+        const msg = document.createElement("span");
+        msg.className = "commit-msg";
+        msg.textContent = c.message;
+        li.appendChild(code);
+        li.appendChild(repo);
+        li.appendChild(msg);
+        list.appendChild(li);
+      }
+      if (counter) counter.textContent = `last ${data.length} commits`;
+    } catch {
+      /* leave the prerendered list in place */
+    }
+  };
+
   const startClock = () => {
     const clock = document.getElementById("clock");
     if (!clock) return;
@@ -275,9 +311,11 @@ const stats = [
 
   startClock();
   setVisitorLocation();
+  hydrateCommits();
   document.addEventListener("astro:page-load", () => {
     startClock();
     setVisitorLocation();
+    hydrateCommits();
   });
   document.addEventListener("astro:before-swap", stopClock);
 </script>

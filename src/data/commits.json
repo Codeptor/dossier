@@ -1,6 +1,12 @@
 [
   {
     "repo": "dossier",
+    "sha": "1179014",
+    "message": "fix: recent commits via repos+commits API instead of search (no indexing latency",
+    "date": "2026-05-01T17:20:24Z"
+  },
+  {
+    "repo": "dossier",
     "sha": "e003a62",
     "message": "feat: blueprint theme as default for first-time visitors",
     "date": "2026-05-01T17:16:57Z"
@@ -10,12 +16,6 @@
     "sha": "42ed58a",
     "message": "feat: global visitor counter via abacus.jasoncameron.dev (replaces per-browser l",
     "date": "2026-05-01T17:08:35Z"
-  },
-  {
-    "repo": "dossier",
-    "sha": "7a6c5a3",
-    "message": "fix: swipe handler uses AbortController for clean re-binding; UPDATED stamp trul",
-    "date": "2026-04-30T13:46:49Z"
   },
   {
     "repo": "kharcha",
