@@ -1,0 +1,42 @@
+---
+title: "The Drawdown Kill Switch That Couldn't See the Crash"
+date: 2026-03-01
+summary: "Signum's risk check was reading a weekly-stale equity curve. A 15% mid-week drawdown was invisible until the next Wednesday's rebalance."
+tag: Engineering
+---
+
+Signum is the trading bot that runs my live S&P 500 paper account. The kill switch is supposed to flatten everything if drawdown crosses 15%. During an audit pass, I realized it would happily watch the world burn for six days.
+
+The original check was reading from `bridge.equity_curve` — an in-memory list that Signum's `LiveBridge` only refreshes once per `run_trading_cycle()`. That cycle runs weekly. So the drawdown calculation was being fed a value that, on a bad Tuesday, could be six days old.
+
+```python
+# old — the kill switch's view of the world updates once a week
+live_eq = [pt["equity"] for pt in bridge.equity_curve]
+risk_checks = risk_manager.check_portfolio_risk(weights, live_equity_curve=live_eq)
+```
+
+A 15% crash between Wednesdays was *literally invisible* to the risk check. The bot would see "yesterday's" equity (which was actually six days old), compute a tiny drawdown, and do nothing.
+
+The fix lives in `examples/live_bot.py`:
+
+```python
+# P0-4 fix: use BROKER equity for drawdown check, not bridge.
+# Bridge equity is only synced weekly during run_trading_cycle.
+broker_equity = account.equity
+prev_state = _load_bot_state()
+equity_peak = max(
+    broker_equity,
+    prev_state.get("equity_peak", broker_equity),
+)
+live_eq = [pt["equity"] for pt in bridge.equity_curve]
+if not live_eq or live_eq[-1] != broker_equity:
+    live_eq.append(broker_equity)
+risk_checks = risk_manager.check_portfolio_risk(weights, live_equity_curve=live_eq)
+```
+
+Two pieces:
+
+1. **Authoritative equity comes from the broker.** `account.equity` is the Alpaca API's number, refreshed on every check. Bridge state is a derived view; the broker is the source of truth.
+2. **Peak survives restarts.** `equity_peak` persists in `bot_state.json` so a process restart doesn't reset peak tracking and silently lower the drawdown threshold the bot is measuring against.
+
+The lesson generalizes past trading. When you have a "fast" check sitting in front of a "slow" data source, the check is exactly as fast as the data. The drawdown kill switch wasn't broken — its inputs were. Always trace the staleness chain from the trigger backwards to the source of truth, and pin the trigger to the freshest hop.

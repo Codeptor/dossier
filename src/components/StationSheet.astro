@@ -1,0 +1,393 @@
+---
+import { getCollection } from "astro:content";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+interface Props {
+  state: "active" | "left" | "right";
+  route?: string;
+}
+
+const { state, route = "/station" } = Astro.props;
+
+const blips = (await getCollection("blips")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+const broadcasts = (await getCollection("broadcasts"))
+  .filter((e) => !e.data.draft)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+
+interface RowEntry {
+  stream: "blips" | "broadcasts";
+  id: string;
+  href: string;
+  title: string;
+  summary: string;
+  tag: string;
+  date: Date;
+}
+
+const blipRows: RowEntry[] = blips.map((e) => ({
+  stream: "blips",
+  id: e.id,
+  href: `/blips/${e.id}`,
+  title: e.data.title,
+  summary: e.data.summary,
+  tag: e.data.tag,
+  date: e.data.date,
+}));
+const broadcastRows: RowEntry[] = broadcasts.map((e) => ({
+  stream: "broadcasts",
+  id: e.id,
+  href: `/broadcasts/${e.id}`,
+  title: e.data.title,
+  summary: e.data.summary,
+  tag: e.data.tag,
+  date: e.data.date,
+}));
+
+const tagsFor = (rows: RowEntry[]) => {
+  const counts = rows.reduce<Record<string, number>>((acc, r) => {
+    acc[r.tag] = (acc[r.tag] ?? 0) + 1;
+    return acc;
+  }, {});
+  return Object.entries(counts).sort((a, b) => b[1] - a[1]);
+};
+
+const blipTags = tagsFor(blipRows);
+const broadcastTags = tagsFor(broadcastRows);
+
+const formatDate = (d: Date) =>
+  d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+---
+
+<article
+  class:list={["sheet", "station-sheet", state]}
+  data-sheet="station"
+  data-route={route}
+  transition:name="sheet-station"
+>
+  <div class="paper-grain"></div>
+  <div class="red-rule"></div>
+  <header class="field-head">
+    <div>
+      <h1>Station</h1>
+      <p>Frequency // 2026.05</p>
+    </div>
+    <div>
+      <strong>ON_AIR</strong>
+      <span>Live channel</span>
+    </div>
+  </header>
+
+  <section class="field-stats" aria-label="Station metrics">
+    <div class="field-stat">
+      <span>BLIPS</span>
+      <strong>{String(blipRows.length).padStart(2, "0")}</strong>
+    </div>
+    <div class="field-stat">
+      <span>BROADCASTS</span>
+      <strong>{String(broadcastRows.length).padStart(2, "0")}</strong>
+    </div>
+    <div class="field-stat">
+      <span>VOL</span>
+      <strong>2026.01</strong>
+    </div>
+  </section>
+
+  <p class="field-intro">
+    Two streams. <strong>Blips</strong> are short field-log notes — systems, markets, terminals, small tools that earn their place. <strong>Broadcasts</strong> are longer dispatches: essays, retros, personal writing.
+  </p>
+
+  <div class="stream-tabs" role="tablist" aria-label="Stream">
+    <button class="stream-tab selected" type="button" data-stream="blips" role="tab" aria-selected="true">
+      BLIPS · {String(blipRows.length).padStart(2, "0")}
+    </button>
+    <button class="stream-tab" type="button" data-stream="broadcasts" role="tab" aria-selected="false">
+      BROADCASTS · {String(broadcastRows.length).padStart(2, "0")}
+    </button>
+  </div>
+
+  <section class="entries" data-stream-pane="blips">
+    <div class="entries-head">
+      <h2>Blips</h2>
+      <span></span>
+    </div>
+    <div class="filters" role="tablist" aria-label="Filter blips by tag">
+      <button class="filter-chip selected" data-filter="*" type="button">
+        ALL · {blipRows.length}
+      </button>
+      {blipTags.map(([tag, count]) => (
+        <button class="filter-chip" data-filter={tag} type="button">
+          {tag.toUpperCase()} · {count}
+        </button>
+      ))}
+    </div>
+    <div class="field-search">
+      <input
+        type="search"
+        placeholder="// SEARCH BLIPS"
+        data-field-search="blips"
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button type="button" class="field-search-clear" data-field-search-clear="blips">CLEAR</button>
+    </div>
+    <div class="entry-list" data-entry-list="blips">
+      {blipRows.map((entry) => (
+        <a href={entry.href} data-tag={entry.tag} data-stream-row="blips">
+          <div>
+            <strong>{entry.title}</strong>
+            <p>{entry.summary}</p>
+            <em>{entry.href}</em>
+          </div>
+          <time>{formatDate(entry.date)}</time>
+        </a>
+      ))}
+    </div>
+  </section>
+
+  <section class="entries" data-stream-pane="broadcasts" hidden>
+    <div class="entries-head">
+      <h2>Broadcasts</h2>
+      <span></span>
+    </div>
+    {broadcastRows.length === 0 ? (
+      <div class="empty-stream">
+        <p>// no_broadcasts_yet</p>
+        <p class="hint">Long-form dispatches will land here. Subscribe via <a href="/rss.xml">RSS</a>.</p>
+      </div>
+    ) : (
+      <>
+        <div class="filters" role="tablist" aria-label="Filter broadcasts by tag">
+          <button class="filter-chip selected" data-filter="*" type="button">
+            ALL · {broadcastRows.length}
+          </button>
+          {broadcastTags.map(([tag, count]) => (
+            <button class="filter-chip" data-filter={tag} type="button">
+              {tag.toUpperCase()} · {count}
+            </button>
+          ))}
+        </div>
+        <div class="field-search">
+          <input
+            type="search"
+            placeholder="// SEARCH BROADCASTS"
+            data-field-search="broadcasts"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button type="button" class="field-search-clear" data-field-search-clear="broadcasts">CLEAR</button>
+        </div>
+        <div class="entry-list" data-entry-list="broadcasts">
+          {broadcastRows.map((entry) => (
+            <a href={entry.href} data-tag={entry.tag} data-stream-row="broadcasts">
+              <div>
+                <strong>{entry.title}</strong>
+                <p>{entry.summary}</p>
+                <em>{entry.href}</em>
+              </div>
+              <time>{formatDate(entry.date)}</time>
+            </a>
+          ))}
+        </div>
+      </>
+    )}
+  </section>
+
+  <div class="field-stamp" aria-hidden="true">
+    <div class="field-stamp-inner">
+      <em>FILED</em>
+      <strong>END_OF_SIGNAL</strong>
+      <span>BHN_CLR_A2 · {profile.year}</span>
+    </div>
+  </div>
+
+  <footer class="field-foot">
+    <p>{profile.name.toUpperCase()} // {profile.year}</p>
+    <Barcode />
+  </footer>
+</article>
+
+<script>
+  const init = () => {
+    const root = document.querySelector(".station-sheet");
+    if (!root) return;
+    if (root.hasAttribute("data-filter-bound")) return;
+    root.setAttribute("data-filter-bound", "1");
+
+    type Stream = "blips" | "broadcasts";
+
+    const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>(".stream-tab"));
+    const panes = Array.from(root.querySelectorAll<HTMLElement>("[data-stream-pane]"));
+
+    const setStream = (stream: Stream, push = true) => {
+      tabs.forEach((t) => {
+        const matches = t.dataset.stream === stream;
+        t.classList.toggle("selected", matches);
+        t.setAttribute("aria-selected", matches ? "true" : "false");
+      });
+      panes.forEach((p) => {
+        if (p.dataset.streamPane === stream) p.removeAttribute("hidden");
+        else p.setAttribute("hidden", "");
+      });
+      if (push) {
+        const url = new URL(window.location.href);
+        if (stream === "blips") url.searchParams.delete("stream");
+        else url.searchParams.set("stream", stream);
+        window.history.replaceState({}, "", url.toString());
+      }
+    };
+
+    tabs.forEach((t) => {
+      t.addEventListener("click", (event) => {
+        event.stopPropagation();
+        const stream = (t.dataset.stream || "blips") as Stream;
+        setStream(stream);
+      });
+    });
+
+    const initial = (() => {
+      const param = new URL(window.location.href).searchParams.get("stream");
+      if (param === "broadcasts") return "broadcasts" as Stream;
+      return "blips" as Stream;
+    })();
+    setStream(initial, false);
+
+    const wirePane = (stream: Stream) => {
+      const pane = root.querySelector<HTMLElement>(`[data-stream-pane="${stream}"]`);
+      if (!pane) return;
+      const chips = pane.querySelectorAll<HTMLButtonElement>(".filter-chip");
+      const entries = pane.querySelectorAll<HTMLAnchorElement>("[data-stream-row]");
+
+      chips.forEach((chip) => {
+        chip.addEventListener("click", (event) => {
+          event.stopPropagation();
+          const filter = chip.dataset.filter ?? "*";
+          chips.forEach((c) => c.classList.toggle("selected", c === chip));
+          entries.forEach((entry) => {
+            const matches = filter === "*" || entry.dataset.tag === filter;
+            entry.classList.toggle("hidden", !matches);
+          });
+        });
+      });
+
+      try {
+        const raw = localStorage.getItem("codeptor-read") || "[]";
+        const arr = JSON.parse(raw) as string[];
+        entries.forEach((entry) => {
+          const href = entry.getAttribute("href") || "";
+          const slug = href.replace(/^\/(blips|broadcasts)\//, "").replace(/\/$/, "");
+          if (arr.includes(slug)) entry.classList.add("read");
+        });
+      } catch {}
+
+      const searchInput = pane.querySelector<HTMLInputElement>("[data-field-search]");
+      const clearBtn = pane.querySelector<HTMLButtonElement>("[data-field-search-clear]");
+      const applySearch = () => {
+        const q = (searchInput?.value || "").trim().toLowerCase();
+        entries.forEach((entry) => {
+          if (!q) {
+            entry.classList.remove("hidden-search");
+            return;
+          }
+          const text = (entry.textContent || "").toLowerCase();
+          entry.classList.toggle("hidden-search", !text.includes(q));
+        });
+      };
+      searchInput?.addEventListener("input", applySearch);
+      clearBtn?.addEventListener("click", () => {
+        if (searchInput) searchInput.value = "";
+        applySearch();
+        searchInput?.focus();
+      });
+    };
+
+    wirePane("blips");
+    wirePane("broadcasts");
+
+    document.addEventListener("keydown", (event) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      const activeSheet = document.querySelector<HTMLElement>(".station-sheet.active");
+      if (!activeSheet) return;
+      if (event.key === "[") {
+        event.preventDefault();
+        setStream("blips");
+      } else if (event.key === "]") {
+        event.preventDefault();
+        setStream("broadcasts");
+      }
+    });
+  };
+  init();
+  document.addEventListener("astro:page-load", init);
+</script>
+
+<style>
+  .stream-tabs {
+    display: flex;
+    gap: 6px;
+    margin: 16px 0 10px;
+    padding: 4px;
+    border: 1px solid color-mix(in srgb, var(--field-ink) 18%, transparent);
+    background: color-mix(in srgb, var(--field-ink) 3%, transparent);
+  }
+  .stream-tab {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: color-mix(in srgb, var(--field-ink) 65%, transparent);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+  }
+  .stream-tab:hover {
+    color: var(--field-ink);
+    background: color-mix(in srgb, var(--field-ink) 4%, transparent);
+  }
+  .stream-tab.selected {
+    color: var(--field-ink);
+    background: color-mix(in srgb, var(--field-ink) 8%, transparent);
+    border-color: color-mix(in srgb, var(--field-ink) 28%, transparent);
+  }
+  [data-stream-pane][hidden] {
+    display: none !important;
+  }
+  .empty-stream {
+    padding: 28px 18px;
+    border: 1px dashed color-mix(in srgb, var(--field-ink) 22%, transparent);
+    background: color-mix(in srgb, var(--field-ink) 2%, transparent);
+    text-align: center;
+    color: color-mix(in srgb, var(--field-ink) 60%, transparent);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
+  .empty-stream p {
+    margin: 0;
+  }
+  .empty-stream .hint {
+    margin-top: 10px;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: color-mix(in srgb, var(--field-ink) 45%, transparent);
+  }
+  .empty-stream a {
+    color: inherit;
+    text-decoration: underline;
+  }
+  @media (max-width: 380px) {
+    .stream-tab {
+      padding: 9px 8px;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+    }
+  }
+</style>

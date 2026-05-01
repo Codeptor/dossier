@@ -1,11 +1,11 @@
 {
-  "sha": "2b9f974",
+  "sha": "279aeab",
   "branch": "master",
-  "builtAt": "2026-05-01T17:42:50.727Z",
-  "builtAtHuman": "Fri, 01 May 2026 17:42:50 GMT",
+  "builtAt": "2026-05-01T21:21:18.031Z",
+  "builtAtHuman": "Fri, 01 May 2026 21:21:18 GMT",
   "lastCommit": {
-    "sha": "2b9f974",
-    "message": "fix: show all 10 commits in recent transmissions list to match header count",
-    "date": "2026-05-01T17:39:07Z"
+    "sha": "569f294",
+    "message": "feat: real-time activity sparkline (/api/activity.json) + SSR /watching letterbo",
+    "date": "2026-05-01T17:43:11Z"
   }
 }

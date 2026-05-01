@@ -1,0 +1,55 @@
+---
+title: "A SessionStart Hook That Mines My Own Transcripts for CLAUDE.md Edits"
+date: 2026-04-14
+summary: "Cron scans last week's session JSONLs for repeating patterns. SessionStart hook nudges me to review proposals before any session starts. Threshold + rejection ledger keep noise out."
+tag: Tools
+---
+
+`~/.claude/CLAUDE.md` is the global instruction file every Claude Code session in this repo loads. Mine drifts. I tell Claude something three times in a week, then forget to codify it, then tell it the same thing again next week. The fix isn't more discipline — it's an automated review loop that surfaces patterns before I open a new session.
+
+Two scripts live under `~/.claude/scripts/`:
+
+- `claude-md-review.sh` — runs weekly via cron. Mines `~/.claude/projects/*/*.jsonl` modified in the last 7 days, asks Claude to find recurring patterns not already in `CLAUDE.md`, and writes the result to `~/.claude/CLAUDE.md.proposals/YYYY-MM-DD.md`. Never edits `CLAUDE.md` directly.
+- `claude-md-pending.sh` — runs at every `SessionStart` via the hook below. Lists any proposal files I haven't yet marked reviewed. Prints nothing if I'm caught up, so it's invisible most of the time.
+
+Wired in `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          { "type": "command", "command": "~/.claude/scripts/claude-md-pending.sh" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The mining script's prompt includes two filters that keep the noise floor low:
+
+```
+## Signal threshold
+Only propose a bullet if the pattern appears in:
+- 3+ distinct project directories, OR
+- 5+ distinct sessions across any projects
+
+One-off occurrences are noise. Drop them.
+```
+
+And a permanent rejection ledger so I never get re-proposed something I've already declined:
+
+```
+## Inputs
+- Current CLAUDE.md: ~/.claude/CLAUDE.md (never propose anything already covered)
+- Rejected list: ~/.claude/CLAUDE.md.rejected.md (never propose anything listed here)
+```
+
+Output is one markdown file per week. Each bullet has a target section (`## Style`, `## Workflow`, etc.) and a one-line "seen in N projects" reasoning. Skipped patterns are listed at the bottom for transparency, so I can see what *almost* qualified and judge whether the threshold is tuned right.
+
+The behavioural shift this caused: corrections I make to Claude in the moment now feel like seeds for a permanent rule, not throwaway interrupts. The proposals file makes the conversion from "I keep saying this" to "this is now a rule" a single review pass per week instead of a vibes-based sometimes-action.
+
+The proposals dir on disk is also a journal of how my preferences have actually changed — `2026-04-14.md` looks meaningfully different from `2026-05-01.md` and the diff between them tells me what I've started caring about that I didn't before.

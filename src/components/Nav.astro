@@ -2,13 +2,13 @@
 import { profile } from "@/data/profile";
 
 interface Props {
-  active: "home" | "thoughts" | "artifacts";
+  active: "home" | "station" | "artifacts";
 }
 
 const { active } = Astro.props;
 const nav = [
   { label: "home", href: "/", key: "1" },
-  { label: "thoughts", href: "/thoughts", key: "2" },
+  { label: "station", href: "/station", key: "2" },
   { label: "artifacts", href: "/artifacts", key: "3" },
 ];
 ---
@@ -141,14 +141,16 @@ const nav = [
   const routeMap: Record<string, string> = {
     "1": "/",
     "h": "/",
-    "2": "/thoughts",
+    "2": "/station",
+    "s": "/station",
     "3": "/artifacts",
     "a": "/artifacts",
   };
-  const routes = ["/", "/thoughts", "/artifacts"];
+  const routes = ["/", "/station", "/artifacts"];
   const currentRoute = (): string => {
     const path = location.pathname.replace(/\/$/, "") || "/";
-    if (path.startsWith("/thoughts")) return "/thoughts";
+    if (path.startsWith("/station")) return "/station";
+    if (path.startsWith("/blips") || path.startsWith("/broadcasts")) return "/station";
     if (path.startsWith("/artifacts")) return "/artifacts";
     return routes.includes(path) ? path : "/";
   };

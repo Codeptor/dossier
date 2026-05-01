@@ -27,9 +27,10 @@
   const COMMANDS = {
     help: "list commands",
     whoami: "the dossier subject",
-    ls: "ls thoughts | ls archive | ls routes",
-    cat: "cat <thought-slug> — open a field log entry",
+    ls: "ls blips | ls broadcasts | ls archive | ls routes",
+    cat: "cat <slug> — open a blip or broadcast",
     open: "open <route> — navigate to a route",
+    tune: "tune blips | broadcasts — switch station stream",
     theme: "theme dark | blueprint | plaque | light",
     mute: "stop sounds",
     unmute: "resume sounds",
@@ -39,7 +40,7 @@
   } as const;
 
   const ROUTES = [
-    "/", "/thoughts", "/artifacts", "/now", "/pulse", "/uses", "/playlist",
+    "/", "/station", "/artifacts", "/now", "/pulse", "/uses", "/playlist",
     "/watching", "/reading", "/contact", "/colophon",
   ];
 
@@ -66,17 +67,20 @@
       out.scrollTop = out.scrollHeight;
     };
 
-    const fetchSlugs = async (): Promise<string[]> => {
+    const fetchSlugs = async (kind: "blips" | "broadcasts" | "all" = "all"): Promise<string[]> => {
       // Pull from sitemap-0 — already generated at build time, no extra API needed.
       try {
         const res = await fetch("/sitemap-0.xml");
         if (!res.ok) return [];
         const xml = await res.text();
         const matches = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)];
-        return matches
+        const filterFor = (prefix: string) => matches
           .map((m) => m[1])
-          .filter((u) => u.includes("/thoughts/") && u !== "https://bhanueso.dev/thoughts/")
-          .map((u) => u.replace(/.*\/thoughts\/([^/]+)\/?$/, "$1"));
+          .filter((u) => u.includes(`/${prefix}/`) && !u.endsWith(`/${prefix}/`))
+          .map((u) => u.replace(new RegExp(`.*/${prefix}/([^/]+)/?$`), "$1"));
+        if (kind === "blips") return filterFor("blips");
+        if (kind === "broadcasts") return filterFor("broadcasts");
+        return [...filterFor("blips"), ...filterFor("broadcasts")];
       } catch {
         return [];
       }
@@ -108,10 +112,19 @@
           return;
         }
         case "ls": {
-          if (arg === "thoughts" || arg === "field-log" || arg === "field_log") {
-            const slugs = await fetchSlugs();
+          if (arg === "blips" || arg === "thoughts" || arg === "field-log" || arg === "field_log") {
+            const slugs = await fetchSlugs("blips");
             if (slugs.length === 0) {
               print("(empty)", "warn");
+              return;
+            }
+            for (const s of slugs.slice(0, 12)) print(s);
+            return;
+          }
+          if (arg === "broadcasts" || arg === "long" || arg === "essays") {
+            const slugs = await fetchSlugs("broadcasts");
+            if (slugs.length === 0) {
+              print("(no broadcasts yet)", "warn");
               return;
             }
             for (const s of slugs.slice(0, 12)) print(s);
@@ -131,17 +144,34 @@
         }
         case "cat": {
           if (!arg) {
-            print("usage: cat <thought-slug>", "err");
+            print("usage: cat <slug>", "err");
             return;
           }
-          const slugs = await fetchSlugs();
-          const match = slugs.find((s) => s === arg || s.includes(arg));
-          if (!match) {
-            print(`cat: '${arg}' not in field log`, "err");
+          const blipSlugs = await fetchSlugs("blips");
+          const broadcastSlugs = await fetchSlugs("broadcasts");
+          const inBlips = blipSlugs.find((s) => s === arg || s.includes(arg));
+          if (inBlips) {
+            print(`opening /blips/${inBlips}…`, "meta");
+            window.location.href = `/blips/${inBlips}`;
             return;
           }
-          print(`opening /thoughts/${match}…`, "meta");
-          window.location.href = `/thoughts/${match}`;
+          const inBroadcasts = broadcastSlugs.find((s) => s === arg || s.includes(arg));
+          if (inBroadcasts) {
+            print(`opening /broadcasts/${inBroadcasts}…`, "meta");
+            window.location.href = `/broadcasts/${inBroadcasts}`;
+            return;
+          }
+          print(`cat: '${arg}' not in station`, "err");
+          return;
+        }
+        case "tune": {
+          const stream = arg.toLowerCase();
+          if (stream !== "blips" && stream !== "broadcasts") {
+            print("usage: tune blips | broadcasts", "err");
+            return;
+          }
+          print(`tuning to /station?stream=${stream}…`, "meta");
+          window.location.href = `/station?stream=${stream}`;
           return;
         }
         case "open":

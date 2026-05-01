@@ -11,11 +11,15 @@ interface OgContent {
   meta: string;
 }
 
-const buildContent = async (slug: string | null): Promise<OgContent> => {
+const buildContent = async (slug: string | null, type: string | null): Promise<OgContent> => {
   if (slug) {
     try {
-      const entries = await getCollection("thoughts");
-      const entry = entries.find((e) => e.id === slug);
+      const blips = await getCollection("blips");
+      const broadcasts = await getCollection("broadcasts");
+      const fromBlips = blips.find((e) => e.id === slug);
+      const fromBroadcasts = broadcasts.find((e) => e.id === slug);
+      const entry = type === "broadcast" ? (fromBroadcasts ?? fromBlips) : (fromBlips ?? fromBroadcasts);
+      const stream = entry === fromBroadcasts ? "BROADCAST" : "BLIP";
       if (entry) {
         const date = entry.data.date.toLocaleDateString("en-US", {
           year: "numeric",
@@ -25,7 +29,7 @@ const buildContent = async (slug: string | null): Promise<OgContent> => {
         return {
           title: entry.data.title,
           subtitle: entry.data.summary,
-          meta: `Field Log // ${entry.data.tag.toUpperCase()} // ${date.toUpperCase()}`,
+          meta: `${stream} // ${entry.data.tag.toUpperCase()} // ${date.toUpperCase()}`,
         };
       }
     } catch {
@@ -41,7 +45,8 @@ const buildContent = async (slug: string | null): Promise<OgContent> => {
 
 export const GET: APIRoute = async ({ url }) => {
   const slug = url.searchParams.get("slug");
-  const content = await buildContent(slug);
+  const type = url.searchParams.get("type");
+  const content = await buildContent(slug, type);
   const titleLines = content.title.split("\n");
 
   const html = {

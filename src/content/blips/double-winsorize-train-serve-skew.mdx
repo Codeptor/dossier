@@ -1,0 +1,43 @@
+---
+title: "Double-Winsorization Is a Train/Serve Skew You Can't See"
+date: 2026-03-01
+summary: "compute_alpha_features() winsorized once, the CV loop winsorized again, inference winsorized once. The model trained on a different distribution than it predicted on."
+tag: Engineering
+---
+
+Signum's feature pipeline has one job: output technical features for ~500 S&P 500 tickers, ready to feed an alpha model. During an audit I found the same data getting clipped to its tails three separate times in training and only once in inference. The model was learning a distribution that quietly disagreed with the one it served on.
+
+The shape of the bug:
+
+```
+training:
+  compute_alpha_features(df)               # winsorize #1: from data quantiles
+    → _purged_walk_forward_cv()            # winsorize #2: per-fold train-only bounds
+      → final fit on full train            # winsorize #3: again from data quantiles
+inference:
+  compute_alpha_features(df, bounds=saved) # winsorize #1: saved training bounds
+                                           # (no #2, no #3)
+```
+
+Each winsorize call clips outliers symmetrically at, say, the 1st and 99th percentile. After the first pass, very little is outside those quantiles by definition — but the function recomputes quantiles from the *clipped* data, so it pulls the bounds in tighter every time. After three passes, the training data is squeezed inside a shrinking band the model never sees in production.
+
+The fix in `python/alpha/features.py`:
+
+```python
+def compute_alpha_features(
+    df: pd.DataFrame,
+    winsorize_bounds: Optional[dict[str, tuple[float, float]]] = None,
+    skip_winsorize: bool = False,
+) -> pd.DataFrame:
+    ...
+    # P0-6 fix: training pipeline skips this — it manages winsorization itself
+    if not skip_winsorize:
+        out = winsorize(out, bounds=winsorize_bounds)
+    return out
+```
+
+Then `train.py` passes `skip_winsorize=True` and runs winsorization exactly once per fold using train-only bounds, mirroring the inference path.
+
+Train/serve skew is the kind of bug that doesn't trip any test. Backtests look fine because the same bug applies to past data. Live performance silently degrades. The only signal is "model is performing worse in production than offline" — a metric most teams don't even instrument before they need it.
+
+The discipline I'm taking from this: **every preprocessing step in a training pipeline must run at most as often as the inference path runs it.** If inference clips once, training clips once. Anything else is a distribution shift waiting to compound across folds.

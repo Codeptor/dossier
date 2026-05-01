@@ -1,6 +1,12 @@
 [
   {
     "repo": "dossier",
+    "sha": "569f294",
+    "message": "feat: real-time activity sparkline (/api/activity.json) + SSR /watching letterbo",
+    "date": "2026-05-01T17:43:11Z"
+  },
+  {
+    "repo": "dossier",
     "sha": "2b9f974",
     "message": "fix: show all 10 commits in recent transmissions list to match header count",
     "date": "2026-05-01T17:39:07Z"
@@ -10,12 +16,6 @@
     "sha": "f553180",
     "message": "feat: real-time recent commits via /api/recent-commits.json + security headers i",
     "date": "2026-05-01T17:33:49Z"
-  },
-  {
-    "repo": "dossier",
-    "sha": "1179014",
-    "message": "fix: recent commits via repos+commits API instead of search (no indexing latency",
-    "date": "2026-05-01T17:20:24Z"
   },
   {
     "repo": "kharcha",

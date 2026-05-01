@@ -9,15 +9,15 @@ import Barcode from "@/components/Barcode.astro";
 import { profile } from "@/data/profile";
 
 export async function getStaticPaths() {
-  const entries = (await getCollection("thoughts")).sort(
-    (a, b) => b.data.date.getTime() - a.data.date.getTime(),
-  );
+  const entries = (await getCollection("broadcasts"))
+    .filter((e) => !e.data.draft)
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
   return entries.map((entry, i) => ({
     params: { slug: entry.id },
     props: {
       entry,
-      prev: entries[i + 1] ?? null, // older entry
-      next: entries[i - 1] ?? null, // newer entry
+      prev: entries[i + 1] ?? null,
+      next: entries[i - 1] ?? null,
     },
   }));
 }
@@ -31,18 +31,14 @@ const dateLabel = entry.data.date.toLocaleDateString("en-US", {
   day: "numeric",
 });
 
-// Reading time — body is the raw MDX source. ~200 wpm is a common
-// average for technical reading.
 const wordCount = entry.body?.split(/\s+/).filter(Boolean).length ?? 0;
 const readingMinutes = Math.max(1, Math.round(wordCount / 200));
 
-// Last-updated timestamp from git log per file. Falls back to entry.data.date
-// when git isn't reachable (e.g. fresh clone in CI without history).
 const lastUpdated = (() => {
   try {
     const here = fileURLToPath(import.meta.url);
     const repoRoot = resolve(here, "..", "..", "..", "..");
-    const filePath = resolve(repoRoot, "src", "content", "thoughts", `${entry.id}.mdx`);
+    const filePath = resolve(repoRoot, "src", "content", "broadcasts", `${entry.id}.mdx`);
     const iso = execFileSync(
       "git",
       ["log", "-1", "--format=%cI", "--", filePath],
@@ -62,8 +58,8 @@ const lastUpdatedLabel = lastUpdated
   ? lastUpdated.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
   : null;
 
-const canonical = new URL(`/thoughts/${entry.id}/`, Astro.site ?? "https://bhanueso.dev").toString();
-const ogImage = new URL(`/og.png?slug=${entry.id}`, Astro.site ?? "https://bhanueso.dev").toString();
+const canonical = new URL(`/broadcasts/${entry.id}/`, Astro.site ?? "https://bhanueso.dev").toString();
+const ogImage = new URL(`/og.png?slug=${entry.id}&type=broadcast`, Astro.site ?? "https://bhanueso.dev").toString();
 const articleLd = {
   "@context": "https://schema.org",
   "@type": "Article",
@@ -76,10 +72,7 @@ const articleLd = {
     name: profile.name,
     url: Astro.site?.toString() ?? "https://bhanueso.dev",
   },
-  publisher: {
-    "@type": "Person",
-    name: profile.name,
-  },
+  publisher: { "@type": "Person", name: profile.name },
   url: canonical,
   image: ogImage,
   articleSection: entry.data.tag,
@@ -88,26 +81,37 @@ const articleLd = {
 };
 ---
 
-<BaseLayout
-  title={`${entry.data.title} // Field Log // Bhanu`}
-  description={entry.data.summary}
->
-  <Nav active="thoughts" />
+<BaseLayout title={`${entry.data.title} // Broadcast // Bhanu`} description={entry.data.summary}>
+  <Nav active="station" />
   <script is:inline type="application/ld+json" set:html={JSON.stringify(articleLd)} />
   <div class="reading-progress" data-reading-progress aria-hidden="true">
     <div class="reading-progress-bar"></div>
   </div>
-  <main class="reading-shell" data-reading-slug={entry.id}>
-    <article class="reading-sheet">
+  <main class="reading-shell broadcast" data-reading-slug={entry.id}>
+    <article class="reading-sheet broadcast-sheet">
+      {entry.data.coverImage && (
+        <figure class="broadcast-cover">
+          <img src={entry.data.coverImage} alt={`Cover image for ${entry.data.title}`} loading="eager" />
+        </figure>
+      )}
       <header class="reading-head">
-        <a href="/thoughts" class="reading-back">← Field Log</a>
+        <a href="/station?stream=broadcasts" class="reading-back">← Station / Broadcasts</a>
         <h1>{entry.data.title}</h1>
+        {entry.data.subtitle && <p class="reading-subtitle">{entry.data.subtitle}</p>}
         <div class="reading-meta">
+          <span class="reading-stream-tag broadcast-tag">BROADCAST</span>
+          <span>·</span>
           <time>{dateLabel}</time>
           <span>·</span>
           <em>{entry.data.tag}</em>
           <span>·</span>
           <em>{readingMinutes} min read</em>
+          {entry.data.series && (
+            <>
+              <span>·</span>
+              <em>series: {entry.data.series}</em>
+            </>
+          )}
           {lastUpdatedLabel && (
             <>
               <span>·</span>
@@ -123,31 +127,31 @@ const articleLd = {
         <ol></ol>
       </aside>
 
-      <section class="reading-body" data-pagefind-body>
+      <section class="reading-body broadcast-body" data-pagefind-body>
         <Content />
       </section>
 
-      <nav class="reading-pager" aria-label="Field Log navigation">
+      <nav class="reading-pager" aria-label="Broadcast navigation">
         {prev ? (
-          <a class="pager-link prev" href={`/thoughts/${prev.id}`}>
+          <a class="pager-link prev" href={`/broadcasts/${prev.id}`}>
             <span>← Older</span>
             <strong>{prev.data.title}</strong>
           </a>
         ) : (
           <span class="pager-link disabled">
             <span>← Older</span>
-            <strong>End of log</strong>
+            <strong>End of broadcasts</strong>
           </span>
         )}
         {next ? (
-          <a class="pager-link next" href={`/thoughts/${next.id}`}>
+          <a class="pager-link next" href={`/broadcasts/${next.id}`}>
             <span>Newer →</span>
             <strong>{next.data.title}</strong>
           </a>
         ) : (
           <span class="pager-link disabled">
             <span>Newer →</span>
-            <strong>Latest entry</strong>
+            <strong>Latest broadcast</strong>
           </span>
         )}
       </nav>
@@ -163,7 +167,7 @@ const articleLd = {
       </section>
 
       <footer class="reading-foot">
-        <a href="/thoughts" class="reading-back">← Field Log</a>
+        <a href="/station?stream=broadcasts" class="reading-back">← Station / Broadcasts</a>
         <Barcode />
         <p>{profile.name.toUpperCase()} // {profile.year}</p>
       </footer>
@@ -171,8 +175,6 @@ const articleLd = {
   </main>
 
   <script>
-    // Reading progress bar — pixel-thin top bar that tracks scroll inside
-    // the reading-shell.
     const wireProgress = () => {
       const bar = document.querySelector<HTMLElement>("[data-reading-progress] .reading-progress-bar");
       if (!bar) return;
@@ -187,8 +189,6 @@ const articleLd = {
       window.addEventListener("resize", update);
     };
 
-    // TOC sidebar — auto-built from h2/h3 inside .reading-body. The headings
-    // already have ids from rehype-slug.
     const wireToc = () => {
       const toc = document.querySelector<HTMLElement>("[data-reading-toc]");
       const list = toc?.querySelector("ol");
@@ -211,8 +211,6 @@ const articleLd = {
       });
     };
 
-    // ✓ Read marker — once the visitor scrolls past the article middle,
-    // remember they've read this entry so the field log list can dim it.
     const wireReadMarker = () => {
       const shell = document.querySelector<HTMLElement>("[data-reading-slug]");
       if (!shell) return;
@@ -239,8 +237,6 @@ const articleLd = {
       window.addEventListener("scroll", check, { passive: true });
     };
 
-    // Giscus — GitHub Discussions on Codeptor/dossier (General category).
-    // Visitors sign in with their GitHub account and reactions are enabled.
     const wireGiscus = () => {
       const mount = document.querySelector<HTMLElement>("[data-giscus]");
       if (!mount || mount.dataset.bound) return;
@@ -275,4 +271,43 @@ const articleLd = {
       wireGiscus();
     });
   </script>
+
+  <style>
+    .reading-shell.broadcast .reading-sheet {
+      max-width: 720px;
+    }
+    .broadcast-body {
+      font-size: 16px;
+      line-height: 1.7;
+      letter-spacing: 0.005em;
+    }
+    .broadcast-body p {
+      margin: 0 0 1.1em;
+    }
+    .reading-subtitle {
+      margin: 6px 0 14px;
+      font-family: var(--mono);
+      font-size: 13px;
+      line-height: 1.5;
+      color: color-mix(in srgb, var(--field-ink) 70%, transparent);
+      letter-spacing: 0.01em;
+    }
+    .reading-stream-tag.broadcast-tag {
+      background: color-mix(in srgb, var(--field-ink) 14%, transparent);
+      border-color: color-mix(in srgb, var(--field-ink) 32%, transparent);
+    }
+    .broadcast-cover {
+      margin: 0 0 32px;
+      padding: 0;
+      border: 1px solid color-mix(in srgb, var(--field-ink) 22%, transparent);
+      background: color-mix(in srgb, var(--field-ink) 3%, transparent);
+      overflow: hidden;
+    }
+    .broadcast-cover img {
+      display: block;
+      width: 100%;
+      height: auto;
+      image-rendering: pixelated;
+    }
+  </style>
 </BaseLayout>

@@ -221,7 +221,7 @@ body::before {
 }
 
 ::view-transition-group(sheet-manifest),
-::view-transition-group(sheet-thoughts),
+::view-transition-group(sheet-station),
 ::view-transition-group(sheet-archive) {
   animation-duration: 460ms;
   animation-timing-function: cubic-bezier(0.32, 0, 0, 1);
@@ -229,10 +229,10 @@ body::before {
 }
 
 ::view-transition-old(sheet-manifest),
-::view-transition-old(sheet-thoughts),
+::view-transition-old(sheet-station),
 ::view-transition-old(sheet-archive),
 ::view-transition-new(sheet-manifest),
-::view-transition-new(sheet-thoughts),
+::view-transition-new(sheet-station),
 ::view-transition-new(sheet-archive) {
   animation-duration: 460ms;
   animation-timing-function: cubic-bezier(0.32, 0, 0, 1);
@@ -259,13 +259,13 @@ body::before {
   /* No sheet animation on mobile — page change is an instant swap so
      the user can scroll the new sheet immediately. */
   ::view-transition-group(sheet-manifest),
-  ::view-transition-group(sheet-thoughts),
+  ::view-transition-group(sheet-station),
   ::view-transition-group(sheet-archive),
   ::view-transition-old(sheet-manifest),
-  ::view-transition-old(sheet-thoughts),
+  ::view-transition-old(sheet-station),
   ::view-transition-old(sheet-archive),
   ::view-transition-new(sheet-manifest),
-  ::view-transition-new(sheet-thoughts),
+  ::view-transition-new(sheet-station),
   ::view-transition-new(sheet-archive) {
     animation: none !important;
   }
@@ -512,7 +512,7 @@ a {
 /* ──── Thoughts — coarser fiber + ruled lines (overlay).
    The single vertical margin line lives on the .red-rule element so it stays
    theme-aware; we don't duplicate it here. ──── */
-.thoughts-sheet .paper-grain {
+.station-sheet .paper-grain {
   opacity: 1;
   background-image:
     /* horizontal rule lines every 28px */
@@ -587,8 +587,8 @@ a {
 
 .manifest-sheet.left,
 .manifest-sheet.right,
-.thoughts-sheet.left,
-.thoughts-sheet.right,
+.station-sheet.left,
+.station-sheet.right,
 .archive-sheet.left,
 .archive-sheet.right {
   pointer-events: auto;
@@ -1042,7 +1042,7 @@ a {
   text-transform: uppercase;
 }
 
-.thoughts-sheet {
+.station-sheet {
   padding: 58px 66px 56px;
   overflow: hidden;
   color: var(--field-ink);
@@ -2727,7 +2727,7 @@ a {
   }
 
   .manifest-sheet,
-  .thoughts-sheet,
+  .station-sheet,
   .archive-sheet {
     padding: 32px 26px 40px;
   }

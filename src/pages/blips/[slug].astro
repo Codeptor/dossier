@@ -1,0 +1,262 @@
+---
+import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { getCollection, render } from "astro:content";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import Nav from "@/components/Nav.astro";
+import Barcode from "@/components/Barcode.astro";
+import { profile } from "@/data/profile";
+
+export async function getStaticPaths() {
+  const entries = (await getCollection("blips")).sort(
+    (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+  );
+  return entries.map((entry, i) => ({
+    params: { slug: entry.id },
+    props: {
+      entry,
+      prev: entries[i + 1] ?? null,
+      next: entries[i - 1] ?? null,
+    },
+  }));
+}
+
+const { entry, prev, next } = Astro.props;
+const { Content } = await render(entry);
+
+const dateLabel = entry.data.date.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+
+const wordCount = entry.body?.split(/\s+/).filter(Boolean).length ?? 0;
+const readingMinutes = Math.max(1, Math.round(wordCount / 200));
+
+const lastUpdated = (() => {
+  try {
+    const here = fileURLToPath(import.meta.url);
+    const repoRoot = resolve(here, "..", "..", "..", "..");
+    const filePath = resolve(repoRoot, "src", "content", "blips", `${entry.id}.mdx`);
+    const iso = execFileSync(
+      "git",
+      ["log", "-1", "--format=%cI", "--", filePath],
+      { stdio: ["ignore", "pipe", "ignore"], cwd: repoRoot },
+    )
+      .toString()
+      .trim();
+    if (!iso) return null;
+    const updated = new Date(iso);
+    if (updated.getTime() <= entry.data.date.getTime() + 24 * 60 * 60 * 1000) return null;
+    return updated;
+  } catch {
+    return null;
+  }
+})();
+const lastUpdatedLabel = lastUpdated
+  ? lastUpdated.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
+  : null;
+
+const canonical = new URL(`/blips/${entry.id}/`, Astro.site ?? "https://bhanueso.dev").toString();
+const ogImage = new URL(`/og.png?slug=${entry.id}`, Astro.site ?? "https://bhanueso.dev").toString();
+const articleLd = {
+  "@context": "https://schema.org",
+  "@type": "Article",
+  headline: entry.data.title,
+  description: entry.data.summary,
+  datePublished: entry.data.date.toISOString(),
+  dateModified: entry.data.date.toISOString(),
+  author: {
+    "@type": "Person",
+    name: profile.name,
+    url: Astro.site?.toString() ?? "https://bhanueso.dev",
+  },
+  publisher: { "@type": "Person", name: profile.name },
+  url: canonical,
+  image: ogImage,
+  articleSection: entry.data.tag,
+  wordCount,
+  mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+};
+---
+
+<BaseLayout title={`${entry.data.title} // Blip // Bhanu`} description={entry.data.summary}>
+  <Nav active="station" />
+  <script is:inline type="application/ld+json" set:html={JSON.stringify(articleLd)} />
+  <div class="reading-progress" data-reading-progress aria-hidden="true">
+    <div class="reading-progress-bar"></div>
+  </div>
+  <main class="reading-shell" data-reading-slug={entry.id}>
+    <article class="reading-sheet">
+      <header class="reading-head">
+        <a href="/station" class="reading-back">← Station</a>
+        <h1>{entry.data.title}</h1>
+        <div class="reading-meta">
+          <span class="reading-stream-tag">BLIP</span>
+          <span>·</span>
+          <time>{dateLabel}</time>
+          <span>·</span>
+          <em>{entry.data.tag}</em>
+          <span>·</span>
+          <em>{readingMinutes} min read</em>
+          {lastUpdatedLabel && (
+            <>
+              <span>·</span>
+              <em>updated {lastUpdatedLabel}</em>
+            </>
+          )}
+        </div>
+        <p class="reading-summary">{entry.data.summary}</p>
+      </header>
+
+      <aside class="reading-toc" data-reading-toc aria-label="Table of contents">
+        <span>// CONTENTS</span>
+        <ol></ol>
+      </aside>
+
+      <section class="reading-body" data-pagefind-body>
+        <Content />
+      </section>
+
+      <nav class="reading-pager" aria-label="Blip navigation">
+        {prev ? (
+          <a class="pager-link prev" href={`/blips/${prev.id}`}>
+            <span>← Older</span>
+            <strong>{prev.data.title}</strong>
+          </a>
+        ) : (
+          <span class="pager-link disabled">
+            <span>← Older</span>
+            <strong>End of log</strong>
+          </span>
+        )}
+        {next ? (
+          <a class="pager-link next" href={`/blips/${next.id}`}>
+            <span>Newer →</span>
+            <strong>{next.data.title}</strong>
+          </a>
+        ) : (
+          <span class="pager-link disabled">
+            <span>Newer →</span>
+            <strong>Latest entry</strong>
+          </span>
+        )}
+      </nav>
+
+      <section class="reading-comments" aria-label="Comments">
+        <h2>// Discussion</h2>
+        <p class="reading-comments-hint">
+          Comments are powered by GitHub Discussions via Giscus. Sign in with your GitHub account to add a reply, or
+          {" "}
+          <a href={`https://x.com/intent/tweet?url=${encodeURIComponent(canonical)}&text=${encodeURIComponent(entry.data.title)}`} target="_blank" rel="noreferrer noopener">discuss on X</a>.
+        </p>
+        <div class="giscus" data-giscus></div>
+      </section>
+
+      <footer class="reading-foot">
+        <a href="/station" class="reading-back">← Station</a>
+        <Barcode />
+        <p>{profile.name.toUpperCase()} // {profile.year}</p>
+      </footer>
+    </article>
+  </main>
+
+  <script>
+    const wireProgress = () => {
+      const bar = document.querySelector<HTMLElement>("[data-reading-progress] .reading-progress-bar");
+      if (!bar) return;
+      const update = () => {
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        const pct = max > 0 ? Math.min(1, doc.scrollTop / max) : 0;
+        bar.style.transform = `scaleX(${pct})`;
+      };
+      update();
+      window.addEventListener("scroll", update, { passive: true });
+      window.addEventListener("resize", update);
+    };
+
+    const wireToc = () => {
+      const toc = document.querySelector<HTMLElement>("[data-reading-toc]");
+      const list = toc?.querySelector("ol");
+      const body = document.querySelector(".reading-body");
+      if (!toc || !list || !body) return;
+      const headings = body.querySelectorAll<HTMLElement>("h2[id], h3[id]");
+      if (headings.length < 2) {
+        toc.classList.add("empty");
+        return;
+      }
+      while (list.firstChild) list.removeChild(list.firstChild);
+      headings.forEach((h) => {
+        const li = document.createElement("li");
+        li.className = h.tagName.toLowerCase();
+        const a = document.createElement("a");
+        a.href = `#${h.id}`;
+        a.textContent = h.textContent ?? "";
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+    };
+
+    const wireReadMarker = () => {
+      const shell = document.querySelector<HTMLElement>("[data-reading-slug]");
+      if (!shell) return;
+      const slug = shell.dataset.readingSlug;
+      if (!slug) return;
+      let marked = false;
+      const check = () => {
+        if (marked) return;
+        const doc = document.documentElement;
+        const max = doc.scrollHeight - doc.clientHeight;
+        if (max > 0 && doc.scrollTop / max > 0.4) {
+          marked = true;
+          try {
+            const raw = localStorage.getItem("codeptor-read") || "[]";
+            const arr = JSON.parse(raw) as string[];
+            if (!arr.includes(slug)) {
+              arr.push(slug);
+              localStorage.setItem("codeptor-read", JSON.stringify(arr));
+            }
+          } catch {}
+        }
+      };
+      check();
+      window.addEventListener("scroll", check, { passive: true });
+    };
+
+    const wireGiscus = () => {
+      const mount = document.querySelector<HTMLElement>("[data-giscus]");
+      if (!mount || mount.dataset.bound) return;
+      mount.dataset.bound = "1";
+      const s = document.createElement("script");
+      s.src = "https://giscus.app/client.js";
+      s.crossOrigin = "anonymous";
+      s.async = true;
+      s.setAttribute("data-repo", "Codeptor/dossier");
+      s.setAttribute("data-repo-id", "R_kgDOSQJY_w");
+      s.setAttribute("data-category", "General");
+      s.setAttribute("data-category-id", "DIC_kwDOSQJY_84C8DJl");
+      s.setAttribute("data-mapping", "pathname");
+      s.setAttribute("data-strict", "1");
+      s.setAttribute("data-reactions-enabled", "1");
+      s.setAttribute("data-emit-metadata", "0");
+      s.setAttribute("data-input-position", "top");
+      s.setAttribute("data-theme", "transparent_dark");
+      s.setAttribute("data-lang", "en");
+      s.setAttribute("data-loading", "lazy");
+      mount.appendChild(s);
+    };
+
+    wireProgress();
+    wireToc();
+    wireReadMarker();
+    wireGiscus();
+    document.addEventListener("astro:page-load", () => {
+      wireProgress();
+      wireToc();
+      wireReadMarker();
+      wireGiscus();
+    });
+  </script>
+</BaseLayout>

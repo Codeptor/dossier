@@ -3,16 +3,19 @@ import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Nav from "@/components/Nav.astro";
 import Barcode from "@/components/Barcode.astro";
-import { profile } from "@/data/profile";
 import build from "@/data/build.json";
 
 export const prerender = false;
 
-// Latest thought (used for the "Live" status row)
-const thoughts = (await getCollection("thoughts")).sort(
+// Latest blip + broadcast (used for the "Live" status row)
+const blips = (await getCollection("blips")).sort(
   (a, b) => b.data.date.getTime() - a.data.date.getTime(),
 );
-const latestThought = thoughts[0];
+const broadcasts = (await getCollection("broadcasts"))
+  .filter((e) => !e.data.draft)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const latestBlip = blips[0];
+const latestBroadcast = broadcasts[0];
 
 // Last.fm now-playing for the "Listening" status row.
 const LASTFM_USER = "esoterikunt";
@@ -108,7 +111,8 @@ const updatedAt = "LIVE";
           <h2>Live</h2>
           <ul>
             <li><span>Listening</span><strong>{listening}</strong></li>
-            <li><span>Latest thought</span><strong>{latestThought ? latestThought.data.title : "—"}</strong></li>
+            <li><span>Latest blip</span><strong>{latestBlip ? latestBlip.data.title : "—"}</strong></li>
+            <li><span>Latest broadcast</span><strong>{latestBroadcast ? latestBroadcast.data.title : "—"}</strong></li>
           </ul>
         </div>
 

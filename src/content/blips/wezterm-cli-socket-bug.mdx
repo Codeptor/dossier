@@ -1,0 +1,72 @@
+---
+title: "Why I Stopped Polling `wezterm cli list`"
+date: 2026-02-15
+summary: "Two compounding bugs killed the CLI-based daemon: Windows publishes only the socket filename not the path, and the CLI doesn't expose foreground process names anyway."
+tag: Engineering
+artifact: wezterm-presence
+---
+
+import Artifact from "@/components/artifacts/Artifact.astro";
+
+<Artifact slug="wezterm-presence" />
+
+The earlier post on [WSL process detection](/blips/wsl-process-detection-hooks) describes the architecture I landed on: a Lua `update-status` handler writes JSON to `%LOCALAPPDATA%`, the Rust daemon reads that file. This post is about the architecture I tried *first* — polling `wezterm cli list --format json` from the daemon — and the two compounding bugs that made me throw it out.
+
+**Bug one: WezTerm on Windows doesn't know its own socket path.**
+
+`wezterm cli list` connects to the running GUI over a Unix domain socket (yes, on Windows — modern Windows has them). On macOS and Linux, the GUI publishes the socket's full filesystem path through an environment variable so the CLI can find it. On Windows, only the *filename* is published. The CLI knows the socket is called `gui-sock-12345` but has no idea where on disk it lives.
+
+WezTerm bug [#4456](https://github.com/wezterm/wezterm/issues/4456) is the upstream tracking issue. Workaround in `src/wezterm.rs`:
+
+```rust
+fn find_socket() -> Option<String> {
+    let home = std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")).ok()?;
+    let wezterm_dir = std::path::Path::new(&home).join(".local/share/wezterm");
+    let entries = std::fs::read_dir(&wezterm_dir).ok()?;
+
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let name = name.to_string_lossy();
+        if name.starts_with("gui-sock-") {
+            return Some(entry.path().to_string_lossy().into_owned());
+        }
+    }
+    None
+}
+```
+
+Scan `~/.local/share/wezterm/` for `gui-sock-*`, inject the absolute path into `WEZTERM_UNIX_SOCKET` before invoking the child:
+
+```rust
+if std::env::var("WEZTERM_UNIX_SOCKET").is_err() {
+    if let Some(sock) = find_socket() {
+        cmd.env("WEZTERM_UNIX_SOCKET", &sock);
+    }
+}
+```
+
+`wezterm cli list` now connected. Half a victory.
+
+**Bug two: the CLI doesn't expose foreground process names.**
+
+Once the CLI was talking, the JSON it returned looked like this:
+
+```json
+{ "pane_id": 0, "tab_id": 0, "title": "zsh — codeptor-dossier", "cwd": "file:///home/esoteric/codeptor-dossier" }
+```
+
+No process name. Title is whatever the shell or program last set, which on most setups is "the binary name" but on plenty of others is "the current command", or "user@host:cwd", or whatever your `PROMPT_COMMAND` decided. There's no field for *the actual foreground process*.
+
+Which I needed. Discord Rich Presence shows different icons for `nvim` vs `cargo` vs `ssh`, and parsing it back out of an arbitrary terminal title is a regex tarpit.
+
+So the daemon stopped invoking `wezterm cli list` entirely. The new architecture:
+
+```
+zsh preexec hook → WezTerm user-var → Lua update-status → JSON file → Rust daemon
+```
+
+The Lua side has full access to the foreground process (via the user-var the shell hook sets, with a fallback to `pane:get_foreground_process_name()`). It writes a clean JSON state file every status tick. The daemon `notify`-watches the file and pushes to Discord IPC.
+
+Diff: `src/wezterm.rs` lost ~143 lines of CLI parsing and gained ~44 lines of file-watching. That's the shape of a good refactor.
+
+The general lesson: when an upstream tool's API doesn't expose what you need, walk the data flow until you find a hop that does. WezTerm's *Lua side* knows everything about every pane — its process tree, its hyperlink state, its title, its working directory. The CLI is a thin export of a small subset. Reading directly from the source of truth (Lua) was always going to be cheaper than parsing a derivation of a derivation.

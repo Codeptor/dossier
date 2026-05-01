@@ -1,0 +1,40 @@
+---
+title: "Survivorship Bias and the Wikipedia S&P 500 Fetch"
+date: 2026-03-01
+summary: "fetch_sp500_tickers() scraped today's index and used it as the historical universe. Two years of training data, zero defaults, zero acquisitions, zero scandals."
+tag: Engineering
+---
+
+Signum's first ingestion code had a clean one-liner I now consider a quiet liar:
+
+```python
+def fetch_sp500_tickers() -> list[str]:
+    return pd.read_html("https://en.wikipedia.org/wiki/List_of_S%26P_500_companies")[0]["Symbol"].tolist()
+```
+
+Looks fine. Returns ~500 tickers. Used as the universe for backtests, the training set, the live trading bot. The problem isn't the code — it's that "S&P 500" on Wikipedia means *today's* index. Two years of historical data filtered to that list excludes:
+
+- TWTR (delisted 2022, taken private)
+- SIVB (collapsed 2023, FDIC takeover)
+- ATVI (acquired by Microsoft 2023)
+- CERN (acquired by Oracle 2022)
+- FRC (failed 2023)
+- and ~60 others removed during the 2024–2026 window alone
+
+Survivorship bias is the cleanest, most insidious form of look-ahead bias: the model sees only the stocks that lived. Every backtest looks better than reality, every Sharpe ratio is inflated, every drawdown is shallower than what the strategy would have actually felt.
+
+The fix is `SurvivalUniverseProvider` (`python/data/universe.py`), which reconstructs point-in-time S&P 500 membership by walking add/remove events backward from today:
+
+```python
+provider = SurvivalUniverseProvider()
+tickers_2020 = provider.get_universe(date(2020, 3, 15))
+# Returns the ~500 tickers that were in the S&P 500 on March 15, 2020
+```
+
+Data sources stack: the `fja05680/sp500` GitHub dataset (1996-present, pre-built snapshots), Wikipedia's "Selected changes" table as a delta updater, and a local parquet cache for offline runs. Known renames are hardcoded — `FB → META` (2022-06-09), `DWDP → DD` (2019-06-03), Berkshire's dot-vs-dash quirk.
+
+Then `fetch_ohlcv_with_delisted()` chains yfinance (primary) with a Tiingo fallback for tickers that no longer exist on yfinance because the company is gone. Tiingo's free tier gives 500 calls/day, plenty for the long tail. Results are cached as parquet so the second run is free.
+
+One last subtlety: cross-sectional NaN dropout used to drop *any* row with a missing value, which meant a delisted ticker with partial history would poison every other ticker's row at that timestamp. Fixed by computing the dropout per-ticker first.
+
+33 new tests, mostly verifying that the union of today's universe + delisted tickers matches expected counts at known historical dates and that NaN handling doesn't cascade. Inflated apparent performance is the silent killer of every backtest — the strategy that looks great in-sample is often just the strategy that only saw the survivors.

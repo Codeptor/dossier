@@ -24,6 +24,10 @@ export default defineConfig({
   output: "static",
   site: "https://bhanueso.dev",
   adapter: vercel(),
+  redirects: {
+    "/thoughts": "/station",
+    "/thoughts/[slug]": "/blips/[slug]",
+  },
   integrations: [mdx(), react(), sitemap({
     filter: (page) => !page.includes("/og.png") && !page.includes("/api/"),
   })],

@@ -86,9 +86,9 @@ export const capabilities: [string, string][] = [
   ["PYTHON", "LVL_4"],
 ];
 
-// Field-log entries live as MDX in src/content/thoughts/*.mdx.
-// Loaded via getCollection("thoughts") wherever needed (ThoughtsSheet,
-// rss.xml, the manifest stat tile).
+// Field-log entries live as MDX in src/content/blips/*.mdx (short notes)
+// and src/content/broadcasts/*.mdx (long-form). Loaded via getCollection()
+// wherever needed (StationSheet, rss.xml, the manifest stat tile).
 
 export const artifacts = [
   {

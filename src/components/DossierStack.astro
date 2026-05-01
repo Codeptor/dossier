@@ -2,24 +2,24 @@
 import ArchiveSheet from "@/components/ArchiveSheet.astro";
 import ManifestSheet from "@/components/ManifestSheet.astro";
 import Nav from "@/components/Nav.astro";
-import ThoughtsSheet from "@/components/ThoughtsSheet.astro";
+import StationSheet from "@/components/StationSheet.astro";
 import { profile } from "@/data/profile";
 
 interface Props {
-  active: "home" | "thoughts" | "artifacts";
+  active: "home" | "station" | "artifacts";
 }
 
 const { active } = Astro.props;
 
-type Sheet = "home" | "thoughts" | "artifacts";
+type Sheet = "home" | "station" | "artifacts";
 type SheetState = "active" | "left" | "right";
 
 const stateFor = (sheet: Sheet): SheetState => {
   if (sheet === active) return "active";
   const positions: Record<Sheet, Record<Exclude<Sheet, typeof active>, SheetState>> = {
-    home: { thoughts: "right", artifacts: "left" },
-    thoughts: { home: "left", artifacts: "right" },
-    artifacts: { thoughts: "left", home: "right" },
+    home: { station: "right", artifacts: "left" },
+    station: { home: "left", artifacts: "right" },
+    artifacts: { station: "left", home: "right" },
   };
   return positions[active][sheet as Exclude<Sheet, typeof active>];
 };
@@ -29,7 +29,7 @@ const stateFor = (sheet: Sheet): SheetState => {
 <main id="content" class="site-shell" tabindex="-1">
   <div class="stack-wrap" data-active={active}>
     <ManifestSheet state={stateFor("home")} route="/" />
-    <ThoughtsSheet state={stateFor("thoughts")} route="/thoughts" />
+    <StationSheet state={stateFor("station")} route="/station" />
     <ArchiveSheet state={stateFor("artifacts")} route="/artifacts" />
   </div>
 </main>
@@ -44,16 +44,16 @@ const stateFor = (sheet: Sheet): SheetState => {
 <script>
   import { swap as swapSound } from "@/lib/audio";
 
-  const routes = ["/", "/thoughts", "/artifacts"];
+  const routes = ["/", "/station", "/artifacts"];
   const sheetForRoute: Record<string, string> = {
     "/": "manifest",
-    "/thoughts": "thoughts",
+    "/station": "station",
     "/artifacts": "artifacts",
   };
   // Maps the data-sheet identifier to its view-transition-name.
   const groupName: Record<string, string> = {
     manifest: "sheet-manifest",
-    thoughts: "sheet-thoughts",
+    station: "sheet-station",
     artifacts: "sheet-archive",
   };
 
@@ -79,7 +79,8 @@ const stateFor = (sheet: Sheet): SheetState => {
 
   const currentRoute = () => {
   const path = window.location.pathname.replace(/\/$/, "") || "/";
-    if (path.startsWith("/thoughts")) return "/thoughts";
+    if (path.startsWith("/station")) return "/station";
+    if (path.startsWith("/blips") || path.startsWith("/broadcasts")) return "/station";
     if (path.startsWith("/artifacts")) return "/artifacts";
     return routes.includes(path) ? path : "/";
   };

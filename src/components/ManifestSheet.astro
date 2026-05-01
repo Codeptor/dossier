@@ -22,10 +22,14 @@ interface Props {
 
 const { state, route = "/" } = Astro.props;
 const hasActivity = activity.some((v) => v > 0);
-const thoughtCount = (await getCollection("thoughts")).length;
+const blipCount = (await getCollection("blips")).length;
+const broadcastCount = (await getCollection("broadcasts")).filter(
+  (e) => !e.data.draft,
+).length;
+const logCount = blipCount + broadcastCount;
 const stats = [
   { label: "ARTIFACTS", value: String(artifacts.length).padStart(2, "0") },
-  { label: "THOUGHTS", value: String(thoughtCount).padStart(2, "0") },
+  { label: "LOG", value: String(logCount).padStart(2, "0") },
   { label: "STACK", value: String(capabilities.length).padStart(2, "0") },
 ];
 ---
