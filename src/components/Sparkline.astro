@@ -17,6 +17,9 @@ const dotsAt = data.length - 1;
 
 <svg
   class="sparkline"
+  data-sparkline
+  data-width={width}
+  data-height={height}
   viewBox={`0 0 ${width} ${height}`}
   preserveAspectRatio="none"
   role="img"
@@ -28,8 +31,9 @@ const dotsAt = data.length - 1;
       <stop offset="100%" stop-color="currentColor" stop-opacity="0" />
     </linearGradient>
   </defs>
-  <polygon points={areaPoints} fill="url(#sparkfill)" />
+  <polygon data-sparkline-area points={areaPoints} fill="url(#sparkfill)" />
   <polyline
+    data-sparkline-line
     points={points}
     fill="none"
     stroke="currentColor"
@@ -37,13 +41,15 @@ const dotsAt = data.length - 1;
     stroke-linejoin="round"
     stroke-linecap="round"
   />
-  {data.map((v, i) => (
-    <circle
-      cx={(i * stepX).toFixed(2)}
-      cy={(height - (v / max) * height).toFixed(2)}
-      r={i === dotsAt ? 2.4 : 1}
-      fill="currentColor"
-      opacity={i === dotsAt ? 1 : 0.45}
-    />
-  ))}
+  <g data-sparkline-dots>
+    {data.map((v, i) => (
+      <circle
+        cx={(i * stepX).toFixed(2)}
+        cy={(height - (v / max) * height).toFixed(2)}
+        r={i === dotsAt ? 2.4 : 1}
+        fill="currentColor"
+        opacity={i === dotsAt ? 1 : 0.45}
+      />
+    ))}
+  </g>
 </svg>

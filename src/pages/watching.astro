@@ -6,6 +6,8 @@ import { profile } from "@/data/profile";
 import films from "@/data/letterboxd.json";
 import Stars from "@/components/Stars.astro";
 
+export const prerender = false;
+
 interface Film {
   title: string;
   year: string;
@@ -15,7 +17,64 @@ interface Film {
   link: string;
 }
 
-const recent: Film[] = films as Film[];
+const LETTERBOXD_USER = "esoterikunt";
+const LIMIT = 10;
+
+// Runtime parse of the Letterboxd RSS feed — fresh on every cache miss
+// (15 minutes). Falls back to the build-time JSON snapshot if the feed
+// can't be reached so the page never goes empty.
+const tag = (xml: string, name: string): string | null => {
+  const match = xml.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`));
+  return match ? match[1].trim() : null;
+};
+const cdata = (s: string | null): string =>
+  s ? s.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim() : "";
+
+const fetchFilms = async (): Promise<Film[]> => {
+  try {
+    const res = await fetch(`https://letterboxd.com/${LETTERBOXD_USER}/rss/`, {
+      headers: { "User-Agent": `${LETTERBOXD_USER}-dossier-runtime` },
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!res.ok) throw new Error(`letterboxd ${res.status}`);
+    const xml = await res.text();
+    const items: Film[] = [];
+    const blocks = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
+    for (const m of blocks) {
+      if (items.length >= LIMIT) break;
+      const block = m[1];
+      const title = cdata(tag(block, "title")) || "";
+      if (!title) continue;
+      const filmYear = cdata(tag(block, "letterboxd:filmYear")) || "";
+      const ratingRaw = cdata(tag(block, "letterboxd:memberRating"));
+      const watchedDate = cdata(tag(block, "letterboxd:watchedDate")) || "";
+      const rewatchRaw = cdata(tag(block, "letterboxd:rewatch")) || "No";
+      const link = cdata(tag(block, "link")) || "";
+      const cleanTitle = title.replace(/\s+-\s+★+½?$/, "").replace(/\s+-\s+½$/, "");
+      const titleNoYear = cleanTitle.replace(/,\s*\d{4}$/, "").trim();
+      items.push({
+        title: titleNoYear,
+        year: filmYear,
+        rating: ratingRaw ? parseFloat(ratingRaw) : null,
+        watchedDate,
+        rewatch: rewatchRaw === "Yes",
+        link,
+      });
+    }
+    return items;
+  } catch {
+    return [];
+  }
+};
+
+const live = await fetchFilms();
+const recent: Film[] = live.length > 0 ? live : ((films as unknown) as Film[]);
+
+// Cache 15min fresh, 1h SWR — the RSS only updates when you log a film.
+Astro.response.headers.set(
+  "Cache-Control",
+  "public, s-maxage=900, stale-while-revalidate=3600",
+);
 
 const formatDate = (iso: string): string => {
   if (!iso) return "";

@@ -211,6 +211,53 @@ const stats = [
   // on swap so the prior interval doesn't pile up across navigations.
   let clockTimer: number | undefined;
 
+  // Activity sparkline hydration — pulls fresh monthly buckets from
+  // /api/activity.json (edge-cached 5 min) and rewrites the SVG geometry
+  // in place. Same calc as Sparkline.astro so the result is pixel-equal.
+  const hydrateSparkline = async () => {
+    const svg = document.querySelector<SVGElement>("[data-sparkline]");
+    if (!svg) return;
+    const line = svg.querySelector<SVGPolylineElement>("[data-sparkline-line]");
+    const area = svg.querySelector<SVGPolygonElement>("[data-sparkline-area]");
+    const dotsGroup = svg.querySelector<SVGGElement>("[data-sparkline-dots]");
+    if (!line || !area || !dotsGroup) return;
+    try {
+      const res = await fetch("/api/activity.json", { signal: AbortSignal.timeout(4000) });
+      if (!res.ok) return;
+      const data = (await res.json()) as { buckets?: number[] };
+      const buckets = data?.buckets;
+      if (!Array.isArray(buckets) || buckets.length === 0) return;
+
+      const width = parseFloat(svg.dataset.width ?? "480");
+      const height = parseFloat(svg.dataset.height ?? "56");
+      const max = Math.max(1, ...buckets);
+      const stepX = buckets.length > 1 ? width / (buckets.length - 1) : 0;
+
+      const points = buckets
+        .map((v, i) => `${(i * stepX).toFixed(2)},${(height - (v / max) * height).toFixed(2)}`)
+        .join(" ");
+      const areaPoints = `0,${height} ${points} ${width},${height}`;
+
+      line.setAttribute("points", points);
+      area.setAttribute("points", areaPoints);
+
+      while (dotsGroup.firstChild) dotsGroup.removeChild(dotsGroup.firstChild);
+      const dotsAt = buckets.length - 1;
+      const ns = "http://www.w3.org/2000/svg";
+      buckets.forEach((v, i) => {
+        const c = document.createElementNS(ns, "circle");
+        c.setAttribute("cx", (i * stepX).toFixed(2));
+        c.setAttribute("cy", (height - (v / max) * height).toFixed(2));
+        c.setAttribute("r", i === dotsAt ? "2.4" : "1");
+        c.setAttribute("fill", "currentColor");
+        c.setAttribute("opacity", i === dotsAt ? "1" : "0.45");
+        dotsGroup.appendChild(c);
+      });
+    } catch {
+      /* leave the prerendered sparkline alone */
+    }
+  };
+
   // Recent commits hydration — replaces the build-time list with a live one
   // pulled from /api/recent-commits.json (edge-cached 60s). Falls back
   // silently to the prerendered list if the endpoint is unreachable.
@@ -311,10 +358,12 @@ const stats = [
   startClock();
   setVisitorLocation();
   hydrateCommits();
+  hydrateSparkline();
   document.addEventListener("astro:page-load", () => {
     startClock();
     setVisitorLocation();
     hydrateCommits();
+    hydrateSparkline();
   });
   document.addEventListener("astro:before-swap", stopClock);
 </script>
