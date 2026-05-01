@@ -32,7 +32,7 @@ const nav = [
       ))}
     </div>
     <button class="theme-toggle" type="button" aria-label="Cycle theme" data-theme-toggle>
-      <span class="theme-tag">[ <em data-theme-name>DARK</em> ]</span>
+      <span class="theme-tag">[ <em data-theme-name>BLUEPRINT</em> ]</span>
     </button>
     <button class="audio-toggle" type="button" aria-label="Toggle sound" data-audio-toggle aria-pressed="false" data-muted="0">
       <span class="theme-tag">[ <em data-audio-label>MUTE</em> ]</span>
@@ -71,7 +71,7 @@ const nav = [
       const stored = localStorage.getItem(KEY);
       if (stored && (THEMES as readonly string[]).includes(stored)) return stored as Theme;
     } catch {}
-    return "dark";
+    return "blueprint";
   })();
   apply(initial);
 

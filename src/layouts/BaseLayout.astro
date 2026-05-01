@@ -50,7 +50,8 @@ const personLd = {
       // Apply the persisted theme synchronously before first paint, AND on
       // every Astro view-transition swap (the ClientRouter merges html
       // attributes from the new doc, which would otherwise wipe data-theme).
-      // First-time visitors fall back to prefers-color-scheme.
+      // First-time visitors land on blueprint; light users via OS preference
+      // still get light.
       (function () {
         var KEY = "codeptor-theme";
         var THEMES = ["dark", "blueprint", "plaque", "light"];
@@ -64,7 +65,7 @@ const personLd = {
               return "light";
             }
           } catch (_) {}
-          return "dark";
+          return "blueprint";
         }
         function applyTo(root) {
           root.dataset.theme = resolve();
