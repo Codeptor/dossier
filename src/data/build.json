@@ -1,11 +1,11 @@
 {
-  "sha": "279aeab",
+  "sha": "e5fcea2",
   "branch": "master",
-  "builtAt": "2026-05-01T21:21:18.031Z",
-  "builtAtHuman": "Fri, 01 May 2026 21:21:18 GMT",
+  "builtAt": "2026-05-02T11:17:08.251Z",
+  "builtAtHuman": "Sat, 02 May 2026 11:17:08 GMT",
   "lastCommit": {
-    "sha": "569f294",
-    "message": "feat: real-time activity sparkline (/api/activity.json) + SSR /watching letterbo",
-    "date": "2026-05-01T17:43:11Z"
+    "sha": "e5fcea2",
+    "message": "feat: themed giscus comments + automate /now log",
+    "date": "2026-05-02T11:08:11Z"
   }
 }

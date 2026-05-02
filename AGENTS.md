@@ -76,6 +76,7 @@ Curve `cubic-bezier(0.32, 0, 0, 1)` and duration 460ms come from instrumenting b
 4. Stats (`ARTIFACTS / THOUGHTS / STACK`) are derived from `.length` of the arrays — never hand-typed.
 5. `__GIT_SHA__` is injected by `astro.config.mjs` via `vite.define` from `git rev-parse --short=7 HEAD`. `profile.ts` reads it for the checksum (`BHN.{sha7}`). Falls back to `VERCEL_GIT_COMMIT_SHA`, then `"DEV"`.
 6. Visitor location is fetched client-side from `/api/location.json` (Edge Function reading `x-vercel-ip-city` / `x-vercel-ip-country`).
+7. **Bhanu's** live location on `/now` comes from a phone GPS ping → `POST /api/location/ingest` (Bearer-auth via `LOCATION_INGEST_SECRET`) → reverse geocode (BigDataCloud) → Upstash Redis key `now:location`. `/now.astro` reads the key SSR via `src/lib/location.ts:readLocation`. Falls back to `India · IST.` when the key is unset.
 
 ## Fonts
 
@@ -109,7 +110,27 @@ Ignored when focus is in an input/textarea or `contenteditable`. Modifier keys b
 
 ## Deploy
 
-Vercel. The two `prerender = false` routes (`/api/location.json`, `/og.png`) become serverless functions; everything else is static HTML at the edge.
+Vercel. All `prerender = false` routes (`/api/location.json`, `/api/location/ingest`, `/og.png`, `/now`) become Vercel Functions; everything else is static HTML at the edge.
+
+## Phone GPS pipeline (Android)
+
+Recorder app: **HTTP Request Shortcuts** (Play Store, free, open source). One shortcut, two triggers.
+
+Shortcut config:
+- Method: `POST`
+- URL: `https://bhanueso.dev/api/location/ingest`
+- Headers: `Authorization: Bearer <LOCATION_INGEST_SECRET>`, `Content-Type: application/json`
+- Body (JSON, with built-in variables):
+  ```json
+  {"lat": {{Location.Latitude}}, "lng": {{Location.Longitude}}}
+  ```
+  (Use the app's Location variable; it prompts for permission on first run.)
+
+Triggers (Settings → Scheduler):
+1. Every 30 minutes while charging (battery-friendly).
+2. Significant location change (handled via Tasker if you want geofence-based pings).
+
+The endpoint snaps to city + country only; raw lat/lng is discarded after geocode.
 
 ## Open follow-ups
 

@@ -1,21 +1,21 @@
 [
   {
     "repo": "dossier",
-    "sha": "569f294",
-    "message": "feat: real-time activity sparkline (/api/activity.json) + SSR /watching letterbo",
-    "date": "2026-05-01T17:43:11Z"
+    "sha": "e5fcea2",
+    "message": "feat: themed giscus comments + automate /now log",
+    "date": "2026-05-02T11:08:11Z"
   },
   {
     "repo": "dossier",
-    "sha": "2b9f974",
-    "message": "fix: show all 10 commits in recent transmissions list to match header count",
-    "date": "2026-05-01T17:39:07Z"
+    "sha": "de01c7e",
+    "message": "Merge pull request #2 from Codeptor/copilot/update-scherzo-look-back-cure-etymol",
+    "date": "2026-05-01T22:31:11Z"
   },
   {
     "repo": "dossier",
-    "sha": "f553180",
-    "message": "feat: real-time recent commits via /api/recent-commits.json + security headers i",
-    "date": "2026-05-01T17:33:49Z"
+    "sha": "a1be4d2",
+    "message": "update cure.mdx with four text edits",
+    "date": "2026-05-01T22:30:08Z"
   },
   {
     "repo": "kharcha",
