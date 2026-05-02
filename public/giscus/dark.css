@@ -1,0 +1,192 @@
+/* Giscus theme: dossier — dark site theme.
+   Reading sheet bg is cream (#faf8f0) so Giscus stays warm-light. */
+main {
+  --color-prettylights-syntax-comment: #6e7781;
+  --color-prettylights-syntax-constant: #0550ae;
+  --color-prettylights-syntax-entity: #6639ba;
+  --color-prettylights-syntax-storage-modifier-import: #24292f;
+  --color-prettylights-syntax-entity-tag: #116329;
+  --color-prettylights-syntax-keyword: #cf222e;
+  --color-prettylights-syntax-string: #0a3069;
+  --color-prettylights-syntax-variable: #953800;
+  --color-prettylights-syntax-brackethighlighter-unmatched: #82071e;
+  --color-prettylights-syntax-invalid-illegal-text: #f6f8fa;
+  --color-prettylights-syntax-invalid-illegal-bg: #82071e;
+  --color-prettylights-syntax-carriage-return-text: #f6f8fa;
+  --color-prettylights-syntax-carriage-return-bg: #cf222e;
+  --color-prettylights-syntax-string-regexp: #116329;
+  --color-prettylights-syntax-markup-list: #3b2300;
+  --color-prettylights-syntax-markup-heading: #0550ae;
+  --color-prettylights-syntax-markup-italic: #24292f;
+  --color-prettylights-syntax-markup-bold: #24292f;
+  --color-prettylights-syntax-markup-deleted-text: #82071e;
+  --color-prettylights-syntax-markup-deleted-bg: #ffebe9;
+  --color-prettylights-syntax-markup-inserted-text: #116329;
+  --color-prettylights-syntax-markup-inserted-bg: #dafbe1;
+  --color-prettylights-syntax-markup-changed-text: #953800;
+  --color-prettylights-syntax-markup-changed-bg: #ffd8b5;
+  --color-prettylights-syntax-markup-ignored-text: #eaeef2;
+  --color-prettylights-syntax-markup-ignored-bg: #0550ae;
+  --color-prettylights-syntax-meta-diff-range: #8250df;
+  --color-prettylights-syntax-brackethighlighter-angle: #57606a;
+  --color-prettylights-syntax-sublimelinter-gutter-mark: #8c959f;
+  --color-prettylights-syntax-constant-other-reference-link: #0a3069;
+
+  --color-btn-text: #1b1b18;
+  --color-btn-bg: #faf8f0;
+  --color-btn-border: rgba(27, 27, 24, 0.18);
+  --color-btn-shadow: 0 1px 0 rgba(27, 27, 24, 0.04);
+  --color-btn-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  --color-btn-hover-bg: #f1efe5;
+  --color-btn-hover-border: rgba(27, 27, 24, 0.28);
+  --color-btn-active-bg: #e9e6d8;
+  --color-btn-active-border: rgba(27, 27, 24, 0.32);
+  --color-btn-selected-bg: #e9e6d8;
+  --color-btn-primary-text: #faf8f0;
+  --color-btn-primary-bg: #1b1b18;
+  --color-btn-primary-border: rgba(27, 27, 24, 0.5);
+  --color-btn-primary-shadow: 0 1px 0 rgba(27, 27, 24, 0.1);
+  --color-btn-primary-inset-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --color-btn-primary-hover-bg: #2a2a25;
+  --color-btn-primary-hover-border: rgba(27, 27, 24, 0.55);
+  --color-btn-primary-selected-bg: #1b1b18;
+  --color-btn-primary-selected-shadow: inset 0 1px 0 rgba(0, 0, 0, 0.1);
+  --color-btn-primary-disabled-text: rgba(250, 248, 240, 0.6);
+  --color-btn-primary-disabled-bg: #94928a;
+  --color-btn-primary-disabled-border: rgba(27, 27, 24, 0.18);
+
+  --color-action-list-item-default-hover-bg: rgba(27, 27, 24, 0.06);
+
+  --color-segmented-control-bg: rgba(27, 27, 24, 0.05);
+  --color-segmented-control-button-bg: #faf8f0;
+  --color-segmented-control-button-selected-border: rgba(27, 27, 24, 0.2);
+
+  --color-fg-default: #1b1b18;
+  --color-fg-muted: #57534e;
+  --color-fg-subtle: #6f6b62;
+  --color-canvas-default: #faf8f0;
+  --color-canvas-overlay: #ffffff;
+  --color-canvas-inset: #f3f0e3;
+  --color-canvas-subtle: #f3f0e3;
+  --color-border-default: rgba(27, 27, 24, 0.18);
+  --color-border-muted: rgba(27, 27, 24, 0.10);
+  --color-neutral-muted: rgba(27, 27, 24, 0.08);
+  --color-accent-fg: #b8390e;
+  --color-accent-emphasis: #b8390e;
+  --color-accent-muted: rgba(184, 57, 14, 0.32);
+  --color-accent-subtle: rgba(184, 57, 14, 0.08);
+  --color-success-fg: #1a7f37;
+  --color-attention-fg: #9a6700;
+  --color-attention-muted: rgba(212, 167, 44, 0.32);
+  --color-attention-subtle: #fff8c5;
+  --color-danger-fg: #cf222e;
+  --color-danger-muted: rgba(207, 34, 46, 0.32);
+  --color-danger-subtle: #ffebe9;
+  --color-primer-shadow-inset: 0 1px 0 rgba(255, 255, 255, 0.5);
+
+  --color-scale-gray-1: #eaeef2;
+
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Departure Mono",
+    Menlo, Consolas, monospace !important;
+}
+
+main .pagination-loader-container {
+  background-image: url("https://github.com/images/modules/pulls/progressive-disclosure-line-light.svg");
+}
+
+main .gsc-loading-image {
+  background-image: url("https://github.githubassets.com/images/mona-loading-default.gif");
+}
+
+/* === dossier brutalist overrides — shared across all 4 themes === */
+main, main * {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Departure Mono",
+    Menlo, Consolas, monospace !important;
+}
+
+main .btn,
+main .Box,
+main .Box-header,
+main .Box-footer,
+main .Box-row,
+main .gsc-comment,
+main .gsc-comment-box,
+main .gsc-comment-box-write,
+main .gsc-comment-box-preview,
+main .gsc-comment-content,
+main .gsc-comment-header,
+main .gsc-comment-author-avatar,
+main .gsc-comment-author-avatar img,
+main .gsc-comment-box-tabs button,
+main .gsc-tab-button,
+main textarea,
+main input,
+main select,
+main .form-control,
+main .gsc-direct-reaction-buttons button,
+main .gsc-reactions-count-emoji,
+main .gsc-reactions-menu,
+main .gsc-reactions-popover,
+main .gsc-reactions-popover button,
+main .gsc-comment-replies,
+main .gsc-reply,
+main .UnderlineNav,
+main .UnderlineNav-item,
+main .Label,
+main .toast,
+main img.avatar,
+main img[class*="avatar"] {
+  border-radius: 0 !important;
+}
+
+main .btn,
+main .btn-primary {
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+  padding: 8px 14px !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+main .UnderlineNav-item,
+main button[role="tab"],
+main .gsc-tab-button {
+  text-transform: uppercase !important;
+  letter-spacing: 0.18em !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+}
+
+main .gsc-comment-author {
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+}
+
+main .gsc-comment-header time,
+main .gsc-comment-header .Link--secondary,
+main .gsc-comment-header .color-fg-muted {
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+main textarea,
+main .form-control,
+main input[type="text"] {
+  border-width: 1px !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+main .markdown-body {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+main .markdown-body code,
+main .markdown-body pre {
+  border-radius: 0 !important;
+  font-family: inherit !important;
+}

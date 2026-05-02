@@ -1,13 +1,17 @@
 ---
+import { getCollection } from "astro:content";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import Nav from "@/components/Nav.astro";
 import Barcode from "@/components/Barcode.astro";
 import { profile } from "@/data/profile";
+import { books } from "@/data/reading";
 
 export const prerender = false;
 
 const LASTFM_USER = "esoterikunt";
+const LETTERBOXD_USER = "esoterikunt";
 
+// ── Listening (Last.fm) ──
 async function getRecentTrack(): Promise<string | null> {
   const key = import.meta.env.LASTFM_API_KEY;
   if (!key) return null;
@@ -34,15 +38,76 @@ async function getRecentTrack(): Promise<string | null> {
   }
 }
 
+// ── Watching (Letterboxd RSS) — pull most recent film with rating ──
+const tag = (xml: string, name: string): string | null => {
+  const match = xml.match(new RegExp(`<${name}[^>]*>([\\s\\S]*?)</${name}>`));
+  return match ? match[1].trim() : null;
+};
+const cdata = (s: string | null): string =>
+  s ? s.replace(/^<!\[CDATA\[/, "").replace(/\]\]>$/, "").trim() : "";
+
+async function getLatestFilm(): Promise<string | null> {
+  try {
+    const res = await fetch(`https://letterboxd.com/${LETTERBOXD_USER}/rss/`, {
+      headers: { "User-Agent": `${LETTERBOXD_USER}-dossier-runtime` },
+      signal: AbortSignal.timeout(3500),
+    });
+    if (!res.ok) return null;
+    const xml = await res.text();
+    const blocks = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)];
+    for (const m of blocks) {
+      const block = m[1];
+      const title = cdata(tag(block, "title")) || "";
+      if (!title) continue;
+      const cleanTitle = title.replace(/\s+-\s+★+½?$/, "").replace(/\s+-\s+½$/, "");
+      const titleNoYear = cleanTitle.replace(/,\s*\d{4}$/, "").trim();
+      const filmYear = cdata(tag(block, "letterboxd:filmYear")) || "";
+      const ratingRaw = cdata(tag(block, "letterboxd:memberRating"));
+      const rating = ratingRaw ? parseFloat(ratingRaw) : null;
+      const stars = rating
+        ? "★".repeat(Math.floor(rating)) + (rating % 1 >= 0.5 ? "½" : "")
+        : "";
+      const yearSuffix = filmYear ? ` (${filmYear})` : "";
+      const ratingSuffix = stars ? ` · ${stars}` : "";
+      return `${titleNoYear}${yearSuffix}${ratingSuffix} · letterboxd/${LETTERBOXD_USER}`;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// ── Reading (manual list, current entry) ──
+const currentBook = books.find((b) => b.status === "current");
+const readingValue = currentBook
+  ? `"${currentBook.title}" — ${currentBook.author}${currentBook.note ? ` · ${currentBook.note}` : ""}`
+  : "between books.";
+
+// ── Latest blip + broadcast ──
+const blips = (await getCollection("blips")).sort(
+  (a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+const broadcasts = (await getCollection("broadcasts"))
+  .filter((e) => !e.data.draft)
+  .sort((a, b) => b.data.date.getTime() - a.data.date.getTime());
+const latestBlip = blips[0];
+const latestBroadcast = broadcasts[0];
+
+const latestBlipValue = latestBlip
+  ? `"${latestBlip.data.title}" · /blips/${latestBlip.id}`
+  : "—";
+const latestBroadcastValue = latestBroadcast
+  ? `"${latestBroadcast.data.title}" · /broadcasts/${latestBroadcast.id}`
+  : "—";
+
 // Cache the page at the edge for 60s, serve stale up to 5min while revalidating.
 Astro.response.headers.set(
   "Cache-Control",
   "public, s-maxage=60, stale-while-revalidate=300",
 );
 
-const listening =
-  (await getRecentTrack()) ??
-  `last.fm/${LASTFM_USER} — set LASTFM_API_KEY to populate this row live.`;
+const listening = (await getRecentTrack()) ?? `last.fm/${LASTFM_USER}`;
+const watching = (await getLatestFilm()) ?? `letterboxd/${LETTERBOXD_USER}`;
 
 const focus: { label: string; value: string }[] = [
   {
@@ -59,11 +124,19 @@ const focus: { label: string; value: string }[] = [
   },
   {
     label: "Writing",
-    value: "field-log entries on view transitions, dithering, idempotent sync, and Rust audio threading.",
+    value: latestBroadcastValue,
+  },
+  {
+    label: "Latest blip",
+    value: latestBlipValue,
   },
   {
     label: "Reading",
-    value: "\"Breasts and Eggs\" — Mieko Kawakami.",
+    value: readingValue,
+  },
+  {
+    label: "Watching",
+    value: watching,
   },
   {
     label: "Listening",
@@ -78,7 +151,7 @@ const focus: { label: string; value: string }[] = [
     value: "freelance frontend / creative-coding work and full-time roles at small teams.",
   },
 ];
-const updatedAt = "APR 30 2026";
+const updatedAt = "LIVE";
 ---
 
 <BaseLayout title="Now // Bhanu" description={`What ${profile.name} is focused on right now — building, shipping, reading, listening.`}>
@@ -117,4 +190,3 @@ const updatedAt = "APR 30 2026";
     </article>
   </main>
 </BaseLayout>
-

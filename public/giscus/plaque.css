@@ -1,0 +1,155 @@
+/* Giscus theme: dossier — plaque site theme.
+   Reading sheet bg is warm beige (#e8d4a8), ink is dark brown (#2c2012). */
+main {
+  --color-prettylights-syntax-comment: #6e7781;
+  --color-prettylights-syntax-constant: #0550ae;
+  --color-prettylights-syntax-entity: #6639ba;
+  --color-prettylights-syntax-storage-modifier-import: #2c2012;
+  --color-prettylights-syntax-entity-tag: #116329;
+  --color-prettylights-syntax-keyword: #cf222e;
+  --color-prettylights-syntax-string: #0a3069;
+  --color-prettylights-syntax-variable: #953800;
+  --color-prettylights-syntax-string-regexp: #116329;
+
+  --color-btn-text: #2c2012;
+  --color-btn-bg: #e8d4a8;
+  --color-btn-border: rgba(44, 32, 18, 0.20);
+  --color-btn-shadow: 0 1px 0 rgba(44, 32, 18, 0.04);
+  --color-btn-inset-shadow: inset 0 1px 0 rgba(255, 247, 220, 0.4);
+  --color-btn-hover-bg: #ddc795;
+  --color-btn-hover-border: rgba(44, 32, 18, 0.30);
+  --color-btn-active-bg: #d2bb83;
+  --color-btn-active-border: rgba(44, 32, 18, 0.34);
+  --color-btn-selected-bg: #d2bb83;
+  --color-btn-primary-text: #f6e5c2;
+  --color-btn-primary-bg: #2c2012;
+  --color-btn-primary-border: rgba(44, 32, 18, 0.5);
+  --color-btn-primary-shadow: 0 1px 0 rgba(44, 32, 18, 0.1);
+  --color-btn-primary-inset-shadow: inset 0 1px 0 rgba(246, 229, 194, 0.06);
+  --color-btn-primary-hover-bg: #3a2c1c;
+  --color-btn-primary-selected-bg: #2c2012;
+
+  --color-action-list-item-default-hover-bg: rgba(44, 32, 18, 0.06);
+
+  --color-segmented-control-bg: rgba(44, 32, 18, 0.05);
+  --color-segmented-control-button-bg: #e8d4a8;
+  --color-segmented-control-button-selected-border: rgba(44, 32, 18, 0.22);
+
+  --color-fg-default: #2c2012;
+  --color-fg-muted: #5e4d33;
+  --color-fg-subtle: #7a6747;
+  --color-canvas-default: #e8d4a8;
+  --color-canvas-overlay: #f0e0bb;
+  --color-canvas-inset: #ddc795;
+  --color-canvas-subtle: #ddc795;
+  --color-border-default: rgba(44, 32, 18, 0.20);
+  --color-border-muted: rgba(44, 32, 18, 0.12);
+  --color-neutral-muted: rgba(44, 32, 18, 0.08);
+  --color-accent-fg: #8a3a14;
+  --color-accent-emphasis: #8a3a14;
+  --color-accent-muted: rgba(138, 58, 20, 0.32);
+  --color-accent-subtle: rgba(138, 58, 20, 0.08);
+  --color-success-fg: #1a7f37;
+  --color-danger-fg: #cf222e;
+  --color-danger-subtle: #ffebe9;
+
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Departure Mono",
+    Menlo, Consolas, monospace !important;
+}
+
+main .pagination-loader-container {
+  background-image: url("https://github.com/images/modules/pulls/progressive-disclosure-line-light.svg");
+}
+
+/* === dossier brutalist overrides — shared across all 4 themes === */
+main, main * {
+  font-family: ui-monospace, "SF Mono", "JetBrains Mono", "Departure Mono",
+    Menlo, Consolas, monospace !important;
+}
+
+main .btn,
+main .Box,
+main .Box-header,
+main .Box-footer,
+main .Box-row,
+main .gsc-comment,
+main .gsc-comment-box,
+main .gsc-comment-box-write,
+main .gsc-comment-box-preview,
+main .gsc-comment-content,
+main .gsc-comment-header,
+main .gsc-comment-author-avatar,
+main .gsc-comment-author-avatar img,
+main .gsc-comment-box-tabs button,
+main .gsc-tab-button,
+main textarea,
+main input,
+main select,
+main .form-control,
+main .gsc-direct-reaction-buttons button,
+main .gsc-reactions-count-emoji,
+main .gsc-reactions-menu,
+main .gsc-reactions-popover,
+main .gsc-reactions-popover button,
+main .gsc-comment-replies,
+main .gsc-reply,
+main .UnderlineNav,
+main .UnderlineNav-item,
+main .Label,
+main .toast,
+main img.avatar,
+main img[class*="avatar"] {
+  border-radius: 0 !important;
+}
+
+main .btn,
+main .btn-primary {
+  text-transform: uppercase !important;
+  letter-spacing: 0.08em !important;
+  font-weight: 500 !important;
+  font-size: 11px !important;
+  padding: 8px 14px !important;
+  border-width: 1px !important;
+  box-shadow: none !important;
+}
+
+main .UnderlineNav-item,
+main button[role="tab"],
+main .gsc-tab-button {
+  text-transform: uppercase !important;
+  letter-spacing: 0.18em !important;
+  font-size: 10px !important;
+  font-weight: 500 !important;
+}
+
+main .gsc-comment-author {
+  font-weight: 500 !important;
+  letter-spacing: 0.02em !important;
+}
+
+main .gsc-comment-header time,
+main .gsc-comment-header .Link--secondary,
+main .gsc-comment-header .color-fg-muted {
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+main textarea,
+main .form-control,
+main input[type="text"] {
+  border-width: 1px !important;
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+}
+
+main .markdown-body {
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
+main .markdown-body code,
+main .markdown-body pre {
+  border-radius: 0 !important;
+  font-family: inherit !important;
+}

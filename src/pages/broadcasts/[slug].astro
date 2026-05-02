@@ -237,10 +237,20 @@ const articleLd = {
       window.addEventListener("scroll", check, { passive: true });
     };
 
+    // Cache-bust the theme CSS so iframe re-fetches when we ship updates.
+    // Bump the version when the giscus CSS files change.
+    const GISCUS_THEME_VERSION = "2";
+    const giscusThemeUrl = (theme: string): string => {
+      const valid = ["dark", "blueprint", "plaque", "light"];
+      const t = valid.includes(theme) ? theme : "blueprint";
+      return `${window.location.origin}/giscus/${t}.css?v=${GISCUS_THEME_VERSION}`;
+    };
+
     const wireGiscus = () => {
       const mount = document.querySelector<HTMLElement>("[data-giscus]");
       if (!mount || mount.dataset.bound) return;
       mount.dataset.bound = "1";
+      const currentTheme = document.documentElement.dataset.theme || "blueprint";
       const s = document.createElement("script");
       s.src = "https://giscus.app/client.js";
       s.crossOrigin = "anonymous";
@@ -254,10 +264,26 @@ const articleLd = {
       s.setAttribute("data-reactions-enabled", "1");
       s.setAttribute("data-emit-metadata", "0");
       s.setAttribute("data-input-position", "top");
-      s.setAttribute("data-theme", "transparent_dark");
+      s.setAttribute("data-theme", giscusThemeUrl(currentTheme));
       s.setAttribute("data-lang", "en");
       s.setAttribute("data-loading", "lazy");
       mount.appendChild(s);
+
+      // Live-sync giscus theme to the site's data-theme attribute. Cycle
+      // theme on the page → the giscus iframe receives postMessage and swaps.
+      const observer = new MutationObserver(() => {
+        const iframe = document.querySelector<HTMLIFrameElement>(".giscus-frame");
+        if (!iframe?.contentWindow) return;
+        const theme = document.documentElement.dataset.theme || "blueprint";
+        iframe.contentWindow.postMessage(
+          { giscus: { setConfig: { theme: giscusThemeUrl(theme) } } },
+          "https://giscus.app",
+        );
+      });
+      observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["data-theme"],
+      });
     };
 
     wireProgress();
