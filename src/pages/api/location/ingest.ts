@@ -17,14 +17,15 @@ export const POST: APIRoute = async ({ request }) => {
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : auth;
   if (token !== secret) return json(401, { error: "unauthorized" });
 
-  let body: { lat?: unknown; lng?: unknown };
+  let body: { lat?: unknown; lng?: unknown; lon?: unknown };
   try {
     body = await request.json();
   } catch {
     return json(400, { error: "invalid json" });
   }
+  const rawLng = body.lng ?? body.lon;
   const lat = typeof body.lat === "number" ? body.lat : Number(body.lat);
-  const lng = typeof body.lng === "number" ? body.lng : Number(body.lng);
+  const lng = typeof rawLng === "number" ? rawLng : Number(rawLng);
   if (
     !Number.isFinite(lat) ||
     !Number.isFinite(lng) ||
