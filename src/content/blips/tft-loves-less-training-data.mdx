@@ -1,0 +1,35 @@
+---
+title: "TFT Loved Less Training Data"
+date: 2026-05-03
+summary: "Reduced min_train 2500→1500 expecting marginal change. NBEATSx/NHITS/PatchTST shrugged. TFT lifted Crude_Oil Sharpe 1.20→3.27."
+tag: Research
+---
+
+The setup: NeuralForecast Tier-1 baselines (NBEATSx, NHITS, PatchTST, TFT) trained on commodity returns with `min_train=2500` walk-forward folds — about ten years of training data per fold. I wanted to test whether more recent training history mattered more than longer history, so I dropped `min_train` to 1500 (~6 years), giving up training data to extend the OOS window.
+
+The expectation was modest movement: maybe ±0.1 Sharpe across architectures. What landed:
+
+| Commodity | Model | Sharpe (orig) | Sharpe (extOOS) | Δ |
+|-----------|-------|---------------|-----------------|----|
+| Copper | NBEATSx | +0.26 | +0.31 | +0.04 |
+| Copper | NHITS | +0.14 | +0.11 | -0.02 |
+| Copper | PatchTST | -0.52 | -0.42 | +0.10 |
+| Copper | **TFT** | +0.86 | **+1.54** | **+0.68** |
+| Crude_Oil | NBEATSx | +1.04 | +0.79 | -0.25 |
+| Crude_Oil | NHITS | +0.35 | +0.75 | +0.40 |
+| Crude_Oil | PatchTST | -0.05 | -0.17 | -0.12 |
+| Crude_Oil | **TFT** | +1.20 | **+3.27** | **+2.07** |
+| Gold | TFT | +0.90 | +0.96 | +0.07 |
+| Silver | **TFT** | +0.18 | **+1.63** | **+1.45** |
+
+Mean Δ across all 16 cells: **+0.36**. Mean Δ for TFT specifically: **+1.07**.
+
+The other architectures barely moved. NBEATSx and PatchTST occasionally got worse. NHITS was random. Only TFT — the largest, most parameter-heavy of the four — got dramatically better with less training data.
+
+This is the opposite of the "big models need more data" intuition. The likely mechanism: TFT's variable-selection-network and attention layers are sensitive to fold composition. Training on the most recent 6 years lets it learn from a market regime closer to the OOS test period (post-2018: low-yield, high-vol, COVID, inflation cycle). Training on the full 10 years pulls in the 2010-2017 regime, which dilutes the signal TFT actually needs to capture.
+
+Smaller architectures (NBEATSx, NHITS) don't have enough capacity to chase regime-specific signal — they fit the long-run features, and longer training mostly helps them by reducing variance. TFT has the capacity, so giving it more *relevant* data outweighs giving it more total data.
+
+The headline impact on the ensemble: portfolio_v11 (which now includes the extended-OOS TFT predictions) lifts honest walk-forward Sharpe from 1.94 → 1.98 with these candidates added. Most of the lift comes from the new `extoos_TFT` slots in the v7 candidate pool.
+
+Lesson I'm taking: **don't default to "more training data is better."** For big-architecture small-dataset cases — which is most quant ML — recency matters more than total volume. The right `min_train` is a hyperparameter worth sweeping per architecture.

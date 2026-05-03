@@ -1,0 +1,48 @@
+---
+title: "fillna(0) Killed an Au/Ag Cointegration Test"
+date: 2026-05-03
+summary: "Phase A flagged Silver Kalman cointegration as a -0.51 NEGATIVE result. The negative result was a one-line bug — fillna(0) corrupted β at early NaN dates by inventing a $1 fictitious gold price."
+tag: Engineering
+---
+
+Phase A of my commodity ML project had a clean negative result: Au/Ag Kalman cointegration features hurt Silver XGB Sharpe by 0.51, so I reverted them and documented the methodology as "tested, doesn't help here."
+
+External critique pass found the negative result was contaminated. The bug was in `silver_kalman.py`:
+
+```python
+# the bad version
+log_au_clean = log_au.ffill().bfill().fillna(0).values
+log_ag_clean = log_ag.ffill().bfill().fillna(0).values
+beta, resid = kalman_hedge_ratio(log_ag_clean, log_au_clean, delta=1e-5, Ve=1e-3)
+```
+
+The intent was "fill NaN before passing to Kalman." The actual effect: at early dates where Gold price was missing, `log(Au)` was NaN → `fillna(0)` → `log_au = 0` → fictitious Gold price of `exp(0) = $1`.
+
+The Kalman filter then sees: `spread_t = log(Ag_t) - β_t × 0` for those early rows, which collapses the relationship. Once β's trajectory gets pulled toward whatever fits `log(Ag) = β × 0 + ε`, it never recovers. The "negative result" was the model trying to denoise a hedge-ratio time series that started with three days of fabricated unit prices.
+
+Plus the original `delta=1e-5` (random walk variance scaling) was 10-100× more conservative than the Mittal-Mittal (2025) recipe specifies. A more responsive `delta=1e-2` lets β track regime shifts; `1e-5` makes it nearly static.
+
+The fix is two lines:
+
+```python
+# trim to rows where BOTH series are present, run Kalman strictly on the valid sub-series
+mask = (~log_ag.isna()) & (~log_au.isna())
+valid_idx = np.where(mask)[0]
+log_ag_v = log_ag.values[valid_idx]
+log_au_v = log_au.values[valid_idx]
+beta_v, resid_v = kalman_hedge_ratio(log_ag_v, log_au_v, delta=1e-2, Ve=1e-3)
+beta_full = np.full(len(merged), np.nan); beta_full[valid_idx] = beta_v
+```
+
+After the fix, sweeping delta:
+
+| variant | Silver XGB Sharpe | Δ vs no Kalman |
+|---------|-------------------|-----------------|
+| no Kalman (baseline) | 0.276 | — |
+| delta=1e-4 | 0.276 | -0.0002 |
+| delta=1e-3 | 0.225 | -0.05 |
+| **delta=1e-2** | **0.419** | **+0.143** ✅ |
+
+End-to-end: honest_v7 top6_equal anchor 2.022 → 2.075. Modest but real. The reverted "negative result" was real signal hidden behind two lines of broken NaN handling.
+
+Lesson: **`fillna(0)` is rarely what you want for log-transformed data.** `0` is a magic number that means "this value doesn't exist" in masked arithmetic, but `exp(0) = 1` in price land. Trimming with a mask is one extra line and zero ambiguity. The bug saved time during prototyping and cost a Phase A iteration to find.

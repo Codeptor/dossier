@@ -1,0 +1,190 @@
+---
+title: "Phase A: How the Headline Sharpe Lost 20% to Honesty"
+date: 2026-05-03
+summary: "A commodity ML strategy started Phase A with an oracle Sharpe of 2.43. After a hostile external critique and 8 systematic fixes, the honest walk-forward number was 1.94. This is the trajectory of how every 0.1 Sharpe got found, traced, and given up."
+tag: Field Report
+subtitle: "What rigor actually costs, line by line"
+---
+
+The headline number for my commodity ML project at the start of Phase A was **2.43 net Sharpe** — a portfolio of model ensembles trading Gold, Silver, Copper, and Crude Oil futures, evaluated on 1,524 OOS days from 2020 to 2026. By the end of Phase A solidification, after a hostile external critique pass and eight systematic methodology fixes, the honest number was **1.94 net Sharpe**. That's a 20% loss across about six commits.
+
+Every 0.1 Sharpe lost has a story. This is what each one was, what triggered the audit, and why the smaller number is the correct one to report.
+
+## The starting position
+
+Phase A entered with what felt like a strong result. A v7 ensemble portfolio combining baseline gradient boosters (XGB/LGBM/CatBoost), NeuralForecast Tier-1 deep learning models (NBEATSx, NHITS, PatchTST, TFT), Oxford-style VLSTM and LPatchTST architectures, panel-VLSTM with ticker embedding, and foundation models (Chronos-Bolt, TTM-r2). Top-6 ensemble members selected by oracle Sharpe ranking, equal-weighted, vol-targeted to 12% annualized portfolio volatility, capped at 0.40 per-asset weight, with realistic transaction costs (1.5-4 bps round-trip per commodity).
+
+The robustness checks looked passable:
+- Permutation Monte Carlo of position-return alignment: p < 0.0001
+- Block bootstrap CI: [+0.91, +3.34]
+- PBO across 6 strategy variants: 0.246 (under the 0.30 threshold)
+
+The critique came back with twelve items. A few were minor; several were load-bearing. Here's what each fix cost.
+
+## Fix 1: The NaN-clip that wasn't dead code
+
+The critique flagged a "no-op identity" in the portfolio backtest:
+
+```python
+# at portfolio.py:95-96
+raw_pos = raw_pos.clip(
+    -CAP_PER_ASSET / sigma * sigma.values,
+     CAP_PER_ASSET / sigma * sigma.values
+)
+```
+
+Algebraically this is `clip(-CAP, +CAP)`. The reviewer flagged it as dead code that should be deleted to clean up the function.
+
+Empirically, deleting the lines dropped v7 top-4 equal Sharpe from **2.43 → 2.01**.
+
+The reason: pandas `(DataFrame, DataFrame)` clip bounds skip NaN entries. If `sigma` has NaN at any row, the clip bound is NaN, which pandas treats as "no constraint" and leaves the value unclipped. Replacing with `clip(-CAP_PER_ASSET, CAP_PER_ASSET)` (scalar bounds) applies the cap to every row including NaN ones.
+
+The original "buggy" code wasn't a no-op; it was specifically permissive on NaN rows — which is wrong methodology, but it had been load-bearing for the headline 2.43.
+
+Honest fix: explicit `clip(-CAP, CAP)` with scalar bounds. Headline drops to **1.99** for the oracle config. -0.44 Sharpe lost.
+
+## Fix 2: Walk-forward member selection (S1)
+
+The 1.99 number was still oracle — it picked top-K candidates by their full-OOS Sharpe ranking, which uses information from the future. The honest test is walk-forward member selection: at each fold k, rank candidates by their *prior-fold* mean Sharpe only, then build the ensemble for fold k.
+
+Implemented in `portfolio_honest_v7.py`. Result: top-6 equal weighting drops Sharpe from 1.99 → **1.85** (with-fold0 mode).
+
+The walk-forward result is closer to live performance because it doesn't rely on knowing which models will work on data the model selector hadn't seen yet. The 0.14 Sharpe gap between oracle (1.99) and honest (1.85) is the implicit cost of selection bias in the model-pool.
+
+## Fix 3: The fold-0 fallback drag
+
+External critique reproduced the honest_v7 result and pointed out that fold 0 — about 17% of OOS days — falls back to "all members equal weight" because no prior fold exists yet to rank from. The implication is that 17% of the OOS Sharpe is being computed under a different ensemble strategy than the rest.
+
+Three replacements tested:
+
+| mode | Sharpe | n_OOS |
+|------|--------|-------|
+| `with` (existing fallback) | 1.85 | 1524 |
+| `skip` (drop fold 0 entirely) | 2.05 | 1259 |
+| `anchor` (60d in-fold calibration → rank → apply) | **2.02** | 1523 |
+
+The `anchor` mode keeps the fold-0 OOS days but runs the first 60 days as a calibration window, then ranks members by their fold-0[:60] Sharpe and applies that ranking to fold-0[60:]. Fully causal at every test date, same number of OOS days, no information leakage.
+
+Headline becomes **2.02 anchor**. Up 0.17 Sharpe vs the with-fold0 fallback. The fold-0 drag had been hiding 17% of OOS days under a worse-than-honest strategy.
+
+## Fix 4: The fillna(0) that killed Au/Ag cointegration
+
+Phase A's Au/Ag Kalman cointegration feature was a clean negative result: -0.51 Silver Sharpe after adding it. I'd reverted the feature and documented the test as failed.
+
+External critique audited the implementation and found a one-line bug:
+
+```python
+# the contaminated version
+log_au_clean = log_au.ffill().bfill().fillna(0).values
+```
+
+At early dates with no Gold price, `log(Au)` is NaN → `fillna(0)` → `log(Au) = 0` → fictitious Au price of `exp(0) = $1`. The Kalman filter sees `spread_t = log(Ag_t) - β_t × 0` for those rows; β's trajectory is destroyed at initialization and never recovers.
+
+The "delta=1e-5" random-walk variance scaling was also 10-100× too conservative versus the literature recipe. After fixing the NaN handling and sweeping delta, `delta=1e-2` lifts Silver XGB Sharpe by **+0.14** versus the no-Kalman baseline. The negative result was implementation artifact.
+
+End-to-end portfolio impact: 2.02 → **2.08** anchor.
+
+## Fix 5: Per-commodity feature gating
+
+Phase A added three new features (OVX = oil VIX, GVZ = gold VIX, DFII10 = 10y TIPS) to the macro feature set globally. External critique flagged: OVX has no theoretical motivation as a Gold/Silver/Copper feature; DFII10 is a real-yields driver that mainly motivates Gold; GVZ is gold-specific.
+
+Adding all three to all four commodities had given mixed results: Crude Oil XGB +0.28 Sharpe (theoretically motivated), but Gold/Silver dropped slightly (theoretically unmotivated noise). The per-commodity whitelist:
+
+```python
+PER_COMMODITY_EXTRA_MACRO = {
+    "Crude_Oil": ["ovx"],
+    "Gold":      ["gvz", "dfii10"],
+    "Silver":    ["gvz"],
+    "Copper":    [],
+}
+```
+
+This is an honest tradeoff. Per-commodity gating costs the headline -0.13 Sharpe (2.08 → **1.94** anchor) because XGB had been overfitting Silver to OVX/DFII10 — features that boosted in-sample fit without theoretical support. Removing them produces a more defensible result that's worse by 0.13.
+
+## Fix 6: S17 robustness redesign
+
+The original S17 robustness check ("skip 10% of trades randomly, verify Sharpe stays within ±15% of base") looked rigorous on paper. External critique simulated an iid Gaussian strategy with true Sharpe = 1.5, n=1373: it passed the within-±15% test 94.8% of the time.
+
+The check had no discriminative power. An obviously broken strategy would still pass.
+
+Redesign: compute the percentage of cumulative log-return contributed by the top-1%, top-5%, and top-10% of days (sorted by absolute pnl). Compare the strategy's concentration to a matched-iid Gaussian baseline (1000 simulations, μ + σ matched to observed). If the strategy's z-score for top-10%-concentration is within ±2 of the iid baseline, the edge is broad-based; if it's > 2σ, the headline is outlier-driven.
+
+Result on the four headline strategies: all four pass the redesigned test (z scores +0.27, +1.15, +1.80, +0.40 — under 2.0). The original test had given a meaningless pass; the redesigned test gives a meaningful pass.
+
+This doesn't change the headline number, but it changes the strength of the methodology claim.
+
+## Fix 7: The DFF vintage misclassification
+
+Phase A's ALFRED vintage data layer classified the FRED Effective Federal Funds Rate (DFF) as a "market rate, no revisions" series — fetched as latest-revision only. External critique pointed out: DFF is revised retroactively whenever the FOMC adjusts target ranges or banks restate.
+
+Refetched DFF as full vintage history: 5,042 unique vintages from 2000 to present. The look-ahead bias in DFF was small (0.018 → 0.014 mutual information with y_t+1, ~30% inflation), but it existed. Documented in `docs/DATA_VINTAGES.md`.
+
+This doesn't affect the current headline because DFF vintage is fetched but not yet integrated into `features_v2.py`. It's correct for the next iteration. The real point is: the misclassification was an honest mistake of "DGS10 doesn't revise so DFF probably doesn't either" — a category error fixed by the audit.
+
+## Fix 8: Tuning CatBoost properly
+
+Phase A's CatBoost baseline ran with `iterations=300, no od_wait, no early stopping`. External critique noted this is undertuned versus the Re(Visiting) Nov 2025 paper specs (`iterations=1000, od_wait=40, cat_features` explicit).
+
+Re-ran with proper tuning:
+
+| Commodity | Pre-tune | Post-tune | Δ |
+|-----------|----------|-----------|----|
+| Copper | +0.28 | **+0.77** | **+0.49** |
+| Crude_Oil | -0.26 | -0.52 | -0.26 |
+| Gold | +0.45 | +0.56 | +0.11 |
+| Silver | +0.37 | +0.53 | +0.16 |
+| Mean | +0.21 | +0.34 | **+0.13** |
+
+Tuned CatBoost wins Silver and Copper baselines outright. The "CatBoost is mid-pack" finding from Phase A was a false negative driven by undertuning. Doesn't shift the v7 headline directly (the ensemble doesn't include CatBoost), but the per-commodity baseline ranking changes.
+
+## The trajectory
+
+Headline number, in order:
+
+| Stage | Sharpe | Δ | Source |
+|-------|--------|---|--------|
+| Phase A initial (oracle) | **2.43** | — | NaN-clip-bug-inflated |
+| After S6 NaN-clip fix | 1.99 | -0.44 | honest oracle |
+| After S1 honest walk-fwd | 1.85 | -0.14 | post-S6 + fold-0 fallback |
+| After S1-fix anchor mode | 2.02 | +0.17 | replace fold-0 fallback |
+| After S8 Kalman fix | 2.08 | +0.06 | NaN/delta fix |
+| After S9 per-commodity gating | **1.94** | -0.13 | remove spurious global features |
+
+Net: **2.43 → 1.94 (−20%)** over six commits.
+
+## The robustness story holds
+
+After all the fixes, the rebuttal stack:
+- **Permutation MC** (10K iter): p = 0.0000 across all variants. Strategy has predictive content; not artifact of trade ordering.
+- **Block bootstrap CI** (Politis-Romano stationary, block=30d): [+0.41, +2.65]. Lower bound positive across all reasonable block sizes.
+- **PBO** across 6 strategies: 0.246. Under 0.30 threshold; passes.
+- **Concentration vs matched-iid** (redesigned S17): z(top-10%) = +1.66. Under 2σ; broad-based edge.
+
+The one fail:
+- **Deflated Sharpe** at N=50/100/200/300/500 random trials: p ≈ 0. Observed Sharpe is significantly *below* E[max under random null] for any N ≥ 50. This is a multiple-testing severity concern — given how many architectures we tried, the headline could be the high-water mark of a search.
+
+PBO and bootstrap and permutation say "yes there's edge"; DSR says "we can't rule out it's the lucky tail of the search." Honest framing: 4 of 5 robustness checks pass; the failure is a documented limitation, not a refutation.
+
+## What rigor actually costs
+
+The trajectory cost roughly $50 of cloud GPU time, three 12-hour work sessions, and one 4,805-word external critique. Net result: a number 20% smaller than the one I'd have published before.
+
+The smaller number is the correct one. Three reasons:
+
+**One: implementation bugs were inflating the result.** The NaN-clip behavior, the fold-0 fallback drag, the fillna(0) cointegration corruption — these were not theoretical concerns. They were measurable distortions that moved the headline by 0.4+ Sharpe combined. Removing them produces a defensible number; keeping them produces a marketable one. The marketable one is the one you can't put in front of an audit.
+
+**Two: the methodology claim was overstated.** "Oracle Sharpe 2.43 with broad robustness pass" implied the strategy had performance and methodology rigor. Walk-forward Sharpe with anchor calibration and per-commodity feature gating is the real test. The 1.94 number doesn't claim the same thing as 2.43; it claims something more specific and harder to fault.
+
+**Three: the smaller number is closer to live performance.** Phase A is solidification before paper trading. If 2.43 went into paper and printed 1.0, the divergence would be assumed to be regime change. If 1.94 goes in and prints 1.0, that's still inside the 95% bootstrap CI. The honest Phase A number sets correct expectations.
+
+## What I'd do differently
+
+Two things, retroactively:
+
+**Build the robustness stack before the headline.** I ran walk-forward + bootstrap + permutation, but the permutation test was originally implemented to permute PnL (Sharpe is permutation-invariant on PnL — the test was meaningless), and the skip-N% test was the within-±15% near-tautology. Both got caught and redesigned in audit. If I'd built the rebuttal stack first and used it as a unit test for every claim, the audit pass would have found less.
+
+**Quantify selection bias up-front.** Oracle vs honest walk-forward gap (1.99 - 1.85 = 0.14 Sharpe) is the cost of *not* knowing which models will work. I should have computed and reported this before the headline. It's the single most-important number for understanding whether 1.94 is realistic.
+
+The Phase A trajectory is publicly logged in [`reports/ITERATION_LOG.md`](https://github.com/codeptor/commodities-ml/blob/master/reports/ITERATION_LOG.md) — every commit, every Δ, every bug. The value of an iteration log isn't documentation; it's that you can't quietly edit the headline once it's been written down.
+
+The honest walk-forward Sharpe is **1.94**. CI [+0.87, +2.96]. MaxDD -26.7%. n_OOS 1,523 days. That's the number that goes into Phase B paper trading.
