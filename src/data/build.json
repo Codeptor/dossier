@@ -1,11 +1,11 @@
 {
-  "sha": "e5fcea2",
+  "sha": "60f08ee",
   "branch": "master",
-  "builtAt": "2026-05-02T11:17:08.251Z",
-  "builtAtHuman": "Sat, 02 May 2026 11:17:08 GMT",
+  "builtAt": "2026-05-03T15:22:45.357Z",
+  "builtAtHuman": "Sun, 03 May 2026 15:22:45 GMT",
   "lastCommit": {
-    "sha": "e5fcea2",
-    "message": "feat: themed giscus comments + automate /now log",
-    "date": "2026-05-02T11:08:11Z"
+    "sha": "8af8b79",
+    "message": "feat(location): accept OwnTracks payload (lon alias for lng)",
+    "date": "2026-05-02T11:43:55Z"
   }
 }

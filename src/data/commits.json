@@ -1,21 +1,21 @@
 [
   {
     "repo": "dossier",
-    "sha": "e5fcea2",
-    "message": "feat: themed giscus comments + automate /now log",
-    "date": "2026-05-02T11:08:11Z"
+    "sha": "8af8b79",
+    "message": "feat(location): accept OwnTracks payload (lon alias for lng)",
+    "date": "2026-05-02T11:43:55Z"
   },
   {
     "repo": "dossier",
-    "sha": "de01c7e",
-    "message": "Merge pull request #2 from Codeptor/copilot/update-scherzo-look-back-cure-etymol",
-    "date": "2026-05-01T22:31:11Z"
+    "sha": "1003d67",
+    "message": "chore: redeploy to pick up LOCATION_INGEST_SECRET",
+    "date": "2026-05-02T11:26:07Z"
   },
   {
     "repo": "dossier",
-    "sha": "a1be4d2",
-    "message": "update cure.mdx with four text edits",
-    "date": "2026-05-01T22:30:08Z"
+    "sha": "820fc88",
+    "message": "feat(now): live phone-GPS location via /api/location/ingest",
+    "date": "2026-05-02T11:17:46Z"
   },
   {
     "repo": "kharcha",
